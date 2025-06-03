@@ -1,0 +1,170 @@
+body {
+    font-family: 'Arial', sans-serif; /* Considera una fuente más temática */
+    background-color: #1a1a1a; /* Fondo oscuro principal */
+    color: #e0e0e0; /* Texto claro */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden; /* Para evitar scroll si el juego es de pantalla completa */
+}
+
+#game-container {
+    width: 100%;
+    max-width: 450px; /* Similar a un teléfono, ajustable */
+    height: 100vh; /* O ajusta a la altura deseada, ej: 800px */
+    background-color: #2c2c2c; /* Fondo del contenedor del juego */
+    border: 2px solid #ff0000; /* Borde rojo sangre */
+    box-shadow: 0 0 20px #ff0000a0; /* Sombra roja */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+#game-header {
+    padding: 10px;
+    background-color: #111;
+    border-bottom: 1px solid #ff0000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#player-profile span, #currency-display span {
+    margin-right: 10px;
+    font-size: 0.9em;
+}
+
+#player-profile button, .drop-bank button, .slot-controls button, .side-buttons button, .claim-mission-reward {
+    background-color: #ff0000; /* Rojo sangre para botones */
+    color: #fff;
+    border: 1px solid #8b0000; /* Borde rojo oscuro */
+    padding: 8px 12px;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-top: 5px;
+}
+#player-profile button:hover, .drop-bank button:hover, .slot-controls button:hover, .side-buttons button:hover, .claim-mission-reward:hover {
+    background-color: #cc0000;
+}
+
+
+#game-content {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto; /* Permitir scroll si el contenido es largo */
+}
+
+.tab-content {
+    display: none; /* Ocultar todas las pestañas por defecto */
+    animation: fadeIn 0.5s; /* Animación simple */
+}
+
+.tab-content.active {
+    display: block; /* Mostrar solo la pestaña activa */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+#bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    background-color: #111; /* Fondo de la barra de navegación */
+    padding: 10px 0;
+    border-top: 1px solid #ff0000;
+}
+
+.nav-button {
+    background-color: #333;
+    color: #ccc;
+    border: 1px solid #555;
+    padding: 10px 15px;
+    cursor: pointer;
+    flex-grow: 1;
+    text-align: center;
+    font-size: 0.8em;
+}
+
+.nav-button.active {
+    background-color: #ff0000; /* Pestaña activa en rojo */
+    color: #fff;
+    font-weight: bold;
+}
+
+.nav-button:hover {
+    background-color: #444;
+}
+
+/* Estilos específicos para la Ruleta de Hades (Tragamonedas) */
+.slot-machine-area {
+    text-align: center;
+    padding: 20px;
+    background-color: #222; /* Fondo más oscuro para el área de la tragamonedas */
+    border-radius: 10px;
+    border: 1px solid #444;
+}
+
+.slot-reels {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.reel {
+    font-size: 3em; /* Tamaño grande para los símbolos */
+    font-weight: bold;
+    width: 60px; /* Ancho de cada carrete */
+    height: 80px; /* Alto de cada carrete */
+    line-height: 80px; /* Centrar verticalmente */
+    text-align: center;
+    border: 2px solid #555; /* Borde de los carretes */
+    margin: 0 5px;
+    background-color: #111; /* Fondo de los carretes */
+    color: #ffcc00; /* Color de los símbolos (ej: dorado) */
+    border-radius: 5px;
+}
+
+.slot-controls label, .slot-controls p {
+    margin: 10px 0;
+}
+
+.slot-controls select {
+    padding: 8px;
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #555;
+}
+
+#spin-result-message {
+    margin-top: 15px;
+    font-size: 1.2em;
+    color: #ffcc00; /* Amarillo/dorado para mensajes de ganancia */
+}
+
+.side-buttons {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-around;
+}
+
+/* Placeholder para otras secciones */
+.character-upgrade-area, .drop-bank {
+    background-color: #252525;
+    padding: 15px;
+    margin-top: 10px;
+    border-radius: 5px;
+    border: 1px solid #404040;
+}
+h2 {
+    color: #ff4500; /* Naranja/rojo para títulos de sección */
+    text-align: center;
+    text-transform: uppercase;
+    border-bottom: 1px dashed #555;
+    padding-bottom: 5px;
+}
