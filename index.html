@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crypto Casino 666: Hell's High Rollers</title>
     <link rel="stylesheet" href="style.css">
-</head>
+    </head>
 <body>
     <div id="game-container">
         <header id="game-header">
@@ -13,7 +13,7 @@
                 <span id="player-name">HellRoller</span>
                 <div id="wallet-info">
                     <span id="wallet-status" data-tooltip="Estado de la Billetera TON (Simulado)">Desconectado</span>
-                    <button id="connect-wallet-header" class="action-button wallet-button">Conectar TON</button>
+                    <button id="connect-wallet-button" class="action-button wallet-button">Conectar TON</button> 
                 </div>
                 <span id="wallet-address-display" class="tooltip" data-tooltip="Tu dirección de Billetera TON (Simulada)"></span>
             </div>
@@ -28,4 +28,101 @@
             <div id="tab-ascension" class="tab-content">
                 <h2>ASCENSIÓN</h2>
                 <p class="tab-description">Mejora tu Alter Ego Infernal con CC6 GOLD.</p>
-                <div class="character
+                <div class="character-upgrade-area">
+                    <h3>Tu Alter Ego</h3>
+                    <p>Nivel: <span id="alter-ego-level">1</span></p>
+                    <button class="action-button">Mejorar "Suerte"</button>
+                    <button class="action-button">Mejorar "Influencia"</button>
+                    <button id="send-to-moon" class="action-button special-action">Enviar a la Luna</button>
+                    <h4>Comprar CC6 GOLD</h4>
+                    <p>1000 CC6G por 0.05 TON (Simulado)</p>
+                    <button id="buy-gold-button" class="action-button special-action">Comprar con TON</button>
+                </div>
+            </div>
+
+            <div id="tab-la-caida" class="tab-content">
+                <h2>LA CAÍDA (DROP)</h2>
+                <p class="tab-description">Tu guarida secreta. Acumula CC6 TOKEN.</p>
+                <div class="drop-bank">
+                    <h3>Tokens Acumulados: <span id="drop-bank-total">0</span> CC6T</h3>
+                    <p>Tasa: <span id="drop-rate">0</span> CC6T/hr</p>
+                    <button id="claim-tokens" class="action-button">Reclamar Tokens</button>
+                </div>
+            </div>
+
+            <div id="tab-ruleta-hades" class="tab-content"> <h2>LA RULETA DE HADES</h2>
+                <div class="slot-machine-area">
+                    <div class="slot-machine-ambience">
+                        <div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div>
+                    </div>
+                    <div class="slot-reels">
+                        <span id="reel1" class="reel">?</span>
+                        <span id="reel2" class="reel">?</span>
+                        <span id="reel3" class="reel">?</span>
+                    </div>
+                    <div class="slot-controls">
+                        <p>Giros: <span id="spin-count">100</span></p>
+                        <div class="multiplier-container">
+                            <label for="multiplier-select">Multi:</label>
+                            <select id="multiplier-select">
+                                <option value="1">x1</option><option value="5000">x5k</option><option value="10000">x10k</option>
+                            </select>
+                        </div>
+                        <button id="spin-button" class="action-button spin-action">GIRAR</button>
+                        <button id="autospin-button" class="action-button">AUTO</button>
+                    </div>
+                    <div id="spin-result-message-container">
+                        <p id="spin-result-text"></p>
+                        <p id="spin-winnings-line" style="display: none;">Ganaste: <span id="spin-winnings-amount">0</span> CC6 TOKEN!</p>
+                    </div>
+                    <div id="coin-burst-container"></div>
+                </div>
+                <div class="side-buttons">
+                    <button id="events-button" class="action-button">Eventos</button>
+                    <button id="offers-button" class="action-button">Ofertas</button>
+                </div>
+            </div>
+
+            <div id="tab-tap-to-earn" class="tab-content">
+                <h2>TOQUE DEL DIABLO</h2>
+                <p class="tab-description">Toca la runa para forjar Tokens del Caos (CC6T).</p>
+                <div class="tap-area">
+                    <div id="tappable-rune" class="tooltip" data-tooltip="¡Toca aquí!">👹</div>
+                    <p>Energía: <span id="tap-energy">100</span> / <span id="tap-max-energy">100</span></p>
+                    <p>Ganancia por toque: <span id="tap-gain">1</span> CC6T</p>
+                    <div id="tap-feedback-container"></div>
+                </div>
+            </div>
+
+            <div id="tab-hermandad" class="tab-content">
+                <h2>LA HERMANDAD</h2>
+                <p class="tab-description">Invita amigos y gana recompensas.</p>
+                <input type="text" id="referral-code" placeholder="Tu código de referido" readonly>
+                <button id="copy-referral" class="action-button">Copiar Código</button>
+                <div>
+                    <h4>Amigos Invitados:</h4>
+                    <ul id="invited-friends-list"></ul>
+                </div>
+                <p>Ganancias: <span id="referral-earnings">0</span> CC6T</p>
+            </div>
+
+            <div id="tab-contratos" class="tab-content">
+                <h2>CONTRATOS</h2>
+                <p class="tab-description">Completa misiones y gana recompensas.</p>
+                <ul id="mission-list">
+                    <li><span>Juega 50 giros</span><button class="claim-mission-reward action-button" disabled>Reclamar</button></li>
+                </ul>
+            </div>
+        </main>
+
+        <nav id="bottom-nav">
+            <button class="nav-button" data-tab="tab-ascension">Ascenso</button>
+            <button class="nav-button" data-tab="tab-la-caida">Caída</button>
+            <button class="nav-button" data-tab="tab-ruleta-hades">RULETA</button> <button class="nav-button" data-tab="tab-tap-to-earn">Toque Diablo</button>
+            <button class="nav-button" data-tab="tab-hermandad">Social</button>
+            <button class="nav-button" data-tab="tab-contratos">Misión</button>
+        </nav>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
