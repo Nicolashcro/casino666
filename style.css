@@ -1,54 +1,59 @@
-body {
-    font-family: 'Arial', sans-serif; /* Considera una fuente más temática */
-    background-color: #1a1a1a; /* Fondo oscuro principal */
-    color: #e0e0e0; /* Texto claro */
+/* Reseteo básico y box-sizing */
+* {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px; /* Base para unidades rem/em */
+}
+
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif; /* Fuente común y legible */
+    background-color: #121212; /* Fondo oscuro principal */
+    color: #e0e0e0; /* Texto claro */
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    overflow: hidden; /* Para evitar scroll si el juego es de pantalla completa */
+    width: 100%;
+    overflow-x: hidden; /* Prevenir scroll horizontal */
+    -webkit-tap-highlight-color: transparent; /* Evitar resaltado azul en taps */
 }
 
 #game-container {
     width: 100%;
-    max-width: 450px; /* Similar a un teléfono, ajustable */
-    height: 100vh; /* O ajusta a la altura deseada, ej: 800px */
-    background-color: #2c2c2c; /* Fondo del contenedor del juego */
-    border: 2px solid #ff0000; /* Borde rojo sangre */
-    box-shadow: 0 0 20px #ff0000a0; /* Sombra roja */
+    max-width: 480px; /* Ancho máximo para apariencia de app, ajustable */
+    min-height: 100vh; /* Ocupar toda la altura de la pantalla */
+    background-color: #1e1e1e; /* Fondo del contenedor del juego */
+    border-left: 1px solid #ff000030; /* Bordes sutiles si es más ancho que la pantalla */
+    border-right: 1px solid #ff000030;
+    box-shadow: 0 0 25px #ff000050; /* Sombra roja más sutil */
     display: flex;
     flex-direction: column;
-    position: relative;
+    position: relative; /* Para contextos de apilamiento si es necesario */
 }
 
 #game-header {
-    padding: 10px;
-    background-color: #111;
+    padding: 10px 15px;
+    background-color: #0a0a0a;
     border-bottom: 1px solid #ff0000;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0; /* Evitar que el header se encoja */
 }
 
 #player-profile span, #currency-display span {
-    margin-right: 10px;
-    font-size: 0.9em;
-}
-
-#player-profile button, .drop-bank button, .slot-controls button, .side-buttons button, .claim-mission-reward {
-    background-color: #ff0000; /* Rojo sangre para botones */
-    color: #fff;
-    border: 1px solid #8b0000; /* Borde rojo oscuro */
-    padding: 8px 12px;
-    cursor: pointer;
+    margin-right: 8px;
+    font-size: 0.85em; /* Ligeramente más pequeño para caber */
     font-weight: bold;
-    text-transform: uppercase;
-    margin-top: 5px;
 }
-#player-profile button:hover, .drop-bank button:hover, .slot-controls button:hover, .side-buttons button:hover, .claim-mission-reward:hover {
-    background-color: #cc0000;
+#currency-display span {
+    background-color: #333;
+    padding: 3px 6px;
+    border-radius: 4px;
 }
 
 
@@ -56,115 +61,254 @@ body {
     flex-grow: 1;
     padding: 15px;
     overflow-y: auto; /* Permitir scroll si el contenido es largo */
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+}
+.tab-description {
+    font-size: 0.9em;
+    color: #aaa;
+    text-align: center;
+    margin-bottom: 15px;
 }
 
 .tab-content {
-    display: none; /* Ocultar todas las pestañas por defecto */
-    animation: fadeIn 0.5s; /* Animación simple */
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
 }
 
 .tab-content.active {
-    display: block; /* Mostrar solo la pestaña activa */
+    display: block;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 #bottom-nav {
     display: flex;
-    justify-content: space-around;
-    background-color: #111; /* Fondo de la barra de navegación */
-    padding: 10px 0;
+    background-color: #0a0a0a;
     border-top: 1px solid #ff0000;
+    flex-shrink: 0; /* Evitar que la nav se encoja */
 }
 
 .nav-button {
-    background-color: #333;
+    background-color: transparent; /* Mejor integración */
     color: #ccc;
-    border: 1px solid #555;
-    padding: 10px 15px;
+    border: none;
+    border-right: 1px solid #222; /* Separadores sutiles */
+    padding: 12px 5px; /* Más padding vertical para tap */
     cursor: pointer;
     flex-grow: 1;
     text-align: center;
-    font-size: 0.8em;
+    font-size: 0.75em; /* Nombres de pestañas más pequeños */
+    font-weight: bold;
+    transition: background-color 0.2s, color 0.2s;
+    white-space: nowrap; /* Evitar que el texto se parta en dos líneas */
+}
+.nav-button:last-child {
+    border-right: none;
 }
 
 .nav-button.active {
-    background-color: #ff0000; /* Pestaña activa en rojo */
+    background-color: #ff0000;
     color: #fff;
-    font-weight: bold;
 }
 
-.nav-button:hover {
-    background-color: #444;
+.nav-button:hover:not(.active) { /* Solo para escritorio, no muy relevante en móvil */
+    background-color: #222;
 }
+
+/* Botones de Acción Genéricos */
+.action-button {
+    display: block; /* Para que ocupen el ancho y se puedan centrar o dar margen */
+    width: 100%;
+    background: linear-gradient(to bottom, #c00000, #900000); /* Gradiente rojo oscuro */
+    color: #fff;
+    border: 1px solid #600000;
+    padding: 12px 15px; /* Buen tamaño para tap */
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-radius: 6px;
+    margin-top: 10px;
+    font-size: 0.95em;
+    transition: background 0.2s;
+    text-shadow: 1px 1px 2px #00000080;
+}
+.action-button:hover { /* Para escritorio */
+    background: linear-gradient(to bottom, #d00000, #a00000);
+}
+.action-button:active { /* Feedback en móvil y click */
+    background: linear-gradient(to bottom, #a00000, #700000);
+    transform: translateY(1px);
+}
+.action-button.special-action {
+    background: linear-gradient(to bottom, #ffcc00, #ffaa00);
+    color: #333;
+    border-color: #cc8800;
+}
+.action-button.special-action:hover {
+    background: linear-gradient(to bottom, #ffe066, #ffcc33);
+}
+.action-button.special-action:active {
+    background: linear-gradient(to bottom, #ccaa00, #aa8800);
+}
+.action-button[disabled] {
+    background: #555;
+    color: #888;
+    border-color: #444;
+    cursor: not-allowed;
+    text-shadow: none;
+}
+
 
 /* Estilos específicos para la Ruleta de Hades (Tragamonedas) */
 .slot-machine-area {
     text-align: center;
-    padding: 20px;
-    background-color: #222; /* Fondo más oscuro para el área de la tragamonedas */
+    padding: 15px;
+    background-color: #151515;
     border-radius: 10px;
-    border: 1px solid #444;
+    border: 1px solid #333;
 }
 
 .slot-reels {
     display: flex;
-    justify-content: center;
+    justify-content: space-around; /* Distribuir carretes */
     margin-bottom: 20px;
 }
 
 .reel {
-    font-size: 3em; /* Tamaño grande para los símbolos */
+    font-size: 2.8em; /* Ajustar tamaño para móviles */
     font-weight: bold;
-    width: 60px; /* Ancho de cada carrete */
-    height: 80px; /* Alto de cada carrete */
-    line-height: 80px; /* Centrar verticalmente */
-    text-align: center;
-    border: 2px solid #555; /* Borde de los carretes */
-    margin: 0 5px;
-    background-color: #111; /* Fondo de los carretes */
-    color: #ffcc00; /* Color de los símbolos (ej: dorado) */
-    border-radius: 5px;
+    width: calc(33% - 10px); /* Ancho flexible */
+    aspect-ratio: 3/4; /* Mantener proporción */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid #444;
+    background-color: #0a0a0a;
+    color: #ffcc00;
+    border-radius: 8px;
+    overflow: hidden; /* Para símbolos más grandes que el carrete */
 }
 
-.slot-controls label, .slot-controls p {
-    margin: 10px 0;
+.slot-controls {
+    margin-bottom: 15px;
 }
-
+.slot-controls p {
+    margin-bottom: 10px;
+    font-size: 1em;
+}
+.multiplier-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+.multiplier-container label {
+    margin-right: 8px;
+    font-size: 0.9em;
+}
 .slot-controls select {
-    padding: 8px;
+    padding: 10px; /* Más fácil de tocar */
     background-color: #333;
     color: #fff;
     border: 1px solid #555;
+    border-radius: 5px;
+    font-size: 0.9em;
 }
+
+#spin-button.spin-action { /* Botón de girar más prominente */
+    padding: 15px 20px;
+    font-size: 1.1em;
+    background: linear-gradient(to bottom, #008000, #005000); /* Verde para acción primaria */
+    border-color: #003000;
+}
+#spin-button.spin-action:hover {
+    background: linear-gradient(to bottom, #009000, #006000);
+}
+#spin-button.spin-action:active {
+    background: linear-gradient(to bottom, #006000, #004000);
+}
+
 
 #spin-result-message {
     margin-top: 15px;
-    font-size: 1.2em;
-    color: #ffcc00; /* Amarillo/dorado para mensajes de ganancia */
+    font-size: 1.1em;
+    color: #ffcc00;
+    min-height: 1.5em; /* Para evitar saltos de layout */
 }
 
 .side-buttons {
     margin-top: 20px;
     display: flex;
-    justify-content: space-around;
+    gap: 10px; /* Espacio entre botones */
+}
+.side-buttons .action-button {
+    flex: 1; /* Ocupar espacio disponible equitativamente */
+    font-size: 0.85em;
 }
 
-/* Placeholder para otras secciones */
+/* Estilos para otras secciones */
 .character-upgrade-area, .drop-bank {
-    background-color: #252525;
+    background-color: #202020;
     padding: 15px;
     margin-top: 10px;
-    border-radius: 5px;
-    border: 1px solid #404040;
+    border-radius: 8px;
+    border: 1px solid #383838;
 }
 h2 {
-    color: #ff4500; /* Naranja/rojo para títulos de sección */
+    color: #ff4500;
     text-align: center;
     text-transform: uppercase;
-    border-bottom: 1px dashed #555;
-    padding-bottom: 5px;
+    border-bottom: 1px dashed #444;
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+}
+h3 {
+    color: #e0e0e0;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+ul {
+    list-style: none;
+    padding-left: 0;
+}
+#mission-list li, #invited-friends-list li {
+    background-color: #282828;
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9em;
+}
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #333;
+    border: 1px solid #555;
+    color: #fff;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* Ajustes menores para pantallas muy pequeñas si es necesario */
+@media (max-width: 360px) {
+    html {
+        font-size: 14px; /* Reducir ligeramente la base de fuente */
+    }
+    .nav-button {
+        font-size: 0.7em;
+        padding: 10px 3px;
+    }
+    .reel {
+        font-size: 2.5em;
+    }
+    h2 {
+        font-size: 1.2em;
+    }
 }
