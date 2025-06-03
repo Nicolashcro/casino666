@@ -1,59 +1,243 @@
-/* ... (CSS base y responsivo como en la penúltima respuesta, incluyendo .tooltip, fuentes, etc.) ... */
-/* Asegúrate que el CSS para #game-container, #game-header, #game-content, .tab-content, 
-   .action-button, .wallet-button, #spin-button, .spin-button-cooldown, 
-   .slot-machine-area, .particle, #spin-result-message-container, #coin-burst-container
-   y #bottom-nav esté presente y correcto como lo teníamos)
-*/
+/* Reseteo básico y box-sizing */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 16px; }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0a0a0a;
+    color: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+}
 
-/* --- ESTILOS PARA LA NUEVA PESTAÑA "TAP TO EARN" --- */
-#tab-tap-to-earn .tap-area {
+#game-container {
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    background: linear-gradient(to bottom, #232323, #121212);
+    border-left: 1px solid #ff000050;
+    border-right: 1px solid #ff000050;
+    box-shadow: 0 0 30px #ff000070, inset 0 0 15px #00000090;
     display: flex;
     flex-direction: column;
+    position: relative;
+}
+
+#game-header {
+    padding: 12px 15px;
+    background-color: rgba(0,0,0,0.6); /* Más opaco */
+    border-bottom: 1px solid #ff0000;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    padding: 20px;
-    gap: 15px; /* Espacio entre elementos */
-    background-color: rgba(255, 0, 0, 0.1); /* Fondo rojizo sutil */
-    border: 1px solid #ff000050;
-    border-radius: 10px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000; /* Alto z-index */
 }
 
-#tappable-rune {
-    font-size: 80px; /* Tamaño grande para el icono/imagen de tap */
-    cursor: pointer;
-    user-select: none; /* Evitar selección de texto al tocar rápido */
-    padding: 20px;
-    border-radius: 50%;
-    background-color: #330000;
-    color: #ff6666;
-    border: 3px solid #ff3333;
-    box-shadow: 0 0 15px #ff0000, inset 0 0 10px #660000;
-    transition: transform 0.05s ease-out, box-shadow 0.1s;
+#player-profile { display: flex; align-items: center; gap: 10px; }
+#player-name { font-weight: bold; color: #ff4500; }
+#wallet-info { display: flex; align-items: center; gap: 5px; background-color: rgba(255,255,255,0.1); padding: 3px 6px; border-radius: 5px;}
+#wallet-status { font-size: 0.75em; padding: 3px 5px; border-radius: 3px; font-weight: bold; }
+#wallet-status.connected { background-color: #00cc33cc; color: #ffffff; text-shadow: 0 0 3px #000; }
+#wallet-status.disconnected { background-color: #cc0000cc; color: #ffffff; text-shadow: 0 0 3px #000; }
+#wallet-address-display { font-size: 0.7em; color: #aaa; margin-left: 5px; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help; }
+
+#currency-display { display: flex; align-items: center; gap: 8px; }
+#currency-display span { font-size: 0.8em; font-weight: bold; background-color: rgba(0,0,0,0.4); padding: 4px 7px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); }
+#cc6-token-balance { color: #ffae00; }
+#cc6-gold-balance { color: #ffd700; }
+#wallet-cc6-token-simulated-balance { color: #00e0ff; display: none; /* Se muestra con JS */ }
+
+.tooltip { position: relative; cursor: help; }
+.tooltip:hover::after {
+  content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%) translateY(-5px); background-color: #1a1a1a; color: #fff;
+  padding: 5px 8px; border-radius: 4px; font-size: 0.75em; white-space: nowrap;
+  z-index: 1001; border: 1px solid #555; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
 
-#tappable-rune:active {
-    transform: scale(0.92);
-    box-shadow: 0 0 25px #ff3333, inset 0 0 15px #330000;
+#game-content { flex-grow: 1; padding: 10px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+.tab-content {
+    display: none; /* Ocultar por defecto, JS maneja la visibilidad */
+    padding: 15px;
+    background-color: rgba(10, 0, 0, 0.2); /* Fondo oscuro sutil para pestañas */
+    border: 1px solid #ff000030;
+    border-radius: 8px;
+    margin-top: 5px;
+    animation: tabFadeIn 0.4s ease-out forwards;
+}
+.tab-content.active { display: block; }
+
+@keyframes tabFadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-#tab-tap-to-earn p {
-    font-size: 1em;
-    color: #ffddaa;
-    text-shadow: 1px 1px 2px #000;
+/* Fondos de pestaña (RECUERDA REEMPLAZAR LAS URLS con imágenes reales o quitar si no usas) */
+/* #tab-ascension.tab-content { background-image: url('...'); background-size: cover; background-position: center; } */
+/* #tab-la-caida.tab-content { background-image: url('...'); background-size: cover; background-position: center; } */
+/* #tab-ruleta-hades.tab-content { background-image: url('...'); background-size: cover; background-position: center; } */
+#tab-tap-to-earn.tab-content { background-color: #2a0800; /* Fondo temático si no hay imagen */ }
+
+
+.tab-description { font-size: 0.9em; color: #ccc; text-align: center; margin-bottom: 15px; overflow-wrap: break-word; }
+p { overflow-wrap: break-word; }
+h2 { color: #ff4500; text-align: center; text-transform: uppercase; border-bottom: 1px dashed #555; padding-bottom: 8px; margin-bottom: 15px; font-size: 1.4em; letter-spacing: 1px;}
+h3 { color: #e0e0e0; margin-bottom: 10px; font-size: 1.2em; }
+h4 { color: #ff8c00; margin-top: 15px; margin-bottom: 5px; font-size: 1em; text-transform: uppercase;}
+
+#bottom-nav { display: flex; background-color: #000000; border-top: 2px solid #ff0000; flex-shrink: 0; box-shadow: 0 -5px 15px rgba(255,0,0,0.4); }
+.nav-button {
+    background: linear-gradient(to bottom, #282828, #101010); color: #aaa; border: none;
+    border-right: 1px solid #333; padding: 10px 3px; /* Ajustado para más botones */
+    cursor: pointer; flex-grow: 1; flex-basis: 0; text-align: center;
+    font-size: 0.65em; /* Más pequeño para caber más texto o más botones */
+    font-weight: bold; transition: background 0.3s, color 0.3s, transform 0.1s;
+    white-space: normal; line-height: 1.3; min-height: 50px;
+    display: flex; align-items: center; justify-content: center; text-transform: uppercase;
+}
+.nav-button:last-child { border-right: none; }
+.nav-button.active { background: linear-gradient(to top, #ff0000, #cc0000); color: #fff; text-shadow: 0 0 5px #fff; }
+.nav-button:hover:not(.active) { background: linear-gradient(to bottom, #444, #2a2a2a); color: #fff; }
+.nav-button:active:not(.active) { transform: scale(0.95); }
+
+.action-button {
+    display: block; width: 100%; background: linear-gradient(to bottom, #7d0000, #4c0000);
+    color: #f0f0f0; border: 1px solid #3b0000;
+    box-shadow: 0 4px 0 #2c0000, 0 5px 5px rgba(0,0,0,0.5); padding: 12px 18px;
+    cursor: pointer; font-weight: bold; text-transform: uppercase; border-radius: 6px;
+    margin-top: 10px; font-size: 0.95em; transition: background 0.1s, transform 0.1s, box-shadow 0.1s;
+    text-shadow: 1px 1px 1px #000000a0; overflow-wrap: break-word;
+}
+.action-button:hover:not(:disabled) { background: linear-gradient(to bottom, #9c0000, #6b0000); }
+.action-button:active:not(:disabled) { background: linear-gradient(to top, #7d0000, #4c0000); transform: translateY(2px); box-shadow: 0 2px 0 #2c0000, 0 3px 3px rgba(0,0,0,0.6); }
+.action-button.special-action { background: linear-gradient(to bottom, #ff8c00, #cc5500); border-color: #aa4400; box-shadow: 0 4px 0 #883300, 0 5px 5px rgba(0,0,0,0.5);}
+.action-button.special-action:hover:not(:disabled) { background: linear-gradient(to bottom, #ffa500, #dd6600); }
+.action-button.special-action:active:not(:disabled) { background: linear-gradient(to top, #ff8c00, #cc5500); }
+
+.wallet-button {
+    padding: 6px 10px !important; font-size: 0.7em !important; margin-top: 0 !important;
+    background: linear-gradient(to bottom, #1e5799, #0d2f57); border-color: #08203c;
+    box-shadow: 0 3px 0 #051528, 0 4px 4px rgba(0,0,0,0.4);
+    min-width: 80px; /* Para que "Desconectar" quepa mejor */
+}
+.wallet-button:hover:not(:disabled) { background: linear-gradient(to bottom, #2989d8, #13457a); }
+.wallet-button:active:not(:disabled) { background: linear-gradient(to top, #1e5799, #0d2f57); transform: translateY(1px); box-shadow: 0 1px 0 #051528, 0 2px 2px rgba(0,0,0,0.5); }
+
+#spin-button.spin-action { background: linear-gradient(to bottom, #009000, #006000); border-color: #004000; box-shadow: 0 4px 0 #003000, 0 5px 5px rgba(0,0,0,0.5); padding: 14px 20px; font-size: 1.1em;}
+#spin-button.spin-action:hover:not(:disabled) { background: linear-gradient(to bottom, #00a000, #007000); }
+#spin-button.spin-action:active:not(:disabled) { background: linear-gradient(to top, #009000, #006000); transform: translateY(2px); box-shadow: 0 2px 0 #003000, 0 3px 3px rgba(0,0,0,0.6); }
+
+.spin-button-cooldown {
+    background: linear-gradient(to bottom, #5c635c, #3e403e) !important; color: #999 !important;
+    border-color: #2b2e2b !important; cursor: not-allowed !important;
+    animation: subtleCooldownPulse 1.5s infinite ease-in-out;
+    transform: translateY(0) !important; box-shadow: none !important;
+}
+@keyframes subtleCooldownPulse { 0%, 100% { border-color: #2b2e2b; } 50% { border-color: #777; } }
+
+.action-button[disabled]:not(.spin-button-cooldown) { /* Estilo general para botones deshabilitados */
+    background: linear-gradient(to bottom, #555, #333) !important; color: #888 !important;
+    border-color: #444 !important; cursor: not-allowed !important; text-shadow: none !important;
+    transform: translateY(0) !important; box-shadow: 0 2px 0 #222 !important;
 }
 
-#tap-energy, #tap-max-energy, #tap-gain {
-    font-weight: bold;
-    color: #ffcc88;
+/* Slot Machine Area y Mensajes */
+.slot-machine-area {
+    text-align: center; padding: 20px; background-color: #101010; border-radius: 10px;
+    border: 2px solid #333;
+    box-shadow: 0 0 8px #ff00ffcc, 0 0 15px #ff00ffcc, 0 0 20px #ff00ffcc, inset 0 0 15px #000000cc;
+    position: relative; overflow: hidden;
+    animation: neonFlicker 2.5s infinite alternate ease-in-out;
+}
+@keyframes neonFlicker {
+    0%, 100% { box-shadow: 0 0 8px #ff00ffcc, 0 0 15px #ff00ffcc, 0 0 20px #ff4500cc, 0 0 25px #ff4500cc, inset 0 0 15px #000000cc; }
+    50% { box-shadow: 0 0 12px #ff4500cc, 0 0 20px #ff4500cc, 0 0 28px #ff00ffcc, 0 0 35px #ff00ffcc, inset 0 0 15px #000000cc; }
+}
+.slot-machine-ambience { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
+.particle { /* Sin cambios significativos, asegurar que la animación floatParticle exista */
+    position: absolute; background-color: rgba(255, 223, 186, 0.2); width: 3px; height: 3px;
+    border-radius: 50%; opacity: 0; animation: floatParticle 10s infinite linear;
+}
+.particle:nth-child(1) { top: 20%; left: 10%; animation-delay: 0s; animation-duration: 12s; width: 2px; height: 2px;}
+.particle:nth-child(2) { top: 50%; left: 80%; animation-delay: 1s; animation-duration: 10s; background-color: rgba(255, 100, 0, 0.15);}
+.particle:nth-child(3) { top: 80%; left: 30%; animation-delay: 3s; animation-duration: 11s; width: 4px; height: 4px;}
+.particle:nth-child(4) { top: 10%; left: 90%; animation-delay: 5s; animation-duration: 9s; background-color: rgba(200, 0, 0, 0.2);}
+.particle:nth-child(5) { top: 60%; left: 5%;  animation-delay: 7s; animation-duration: 13s; width: 2px; height: 2px;}
+
+@keyframes floatParticle { /* Asegurar que esta animación exista */
+    0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; }
+    25% { opacity: 0.5; }
+    50% { transform: translateY(-80px) translateX(25px) scale(1); opacity: 0.3; }
+    75% { opacity: 0.1; }
+    100% { transform: translateY(-160px) translateX(-25px) scale(0.5); opacity: 0; }
 }
 
-#tap-feedback-container {
-    position: relative; /* Para posicionar números flotantes */
-    height: 30px; /* Espacio para los números */
-    width: 100px;
-    margin-top: 10px;
+.slot-reels { display: flex; justify-content: space-around; margin-bottom: 20px; }
+.reel {
+    font-size: 2.8em; font-weight: bold; width: calc(33% - 10px); max-width: 70px; /* Reducido un poco */
+    aspect-ratio: 3/4; display: flex; justify-content: center; align-items: center;
+    border: 2px solid #444; background-color: #080808; color: #ffcc00;
+    border-radius: 8px; overflow: hidden; text-shadow: 0 0 3px #000;
+}
+.slot-controls { margin-bottom: 15px; }
+.slot-controls p { margin-bottom: 10px; font-size: 1em; }
+.multiplier-container { display: flex; align-items: center; justify-content: center; margin-bottom: 15px; gap: 5px;}
+.slot-controls select { padding: 8px; background-color: #333; color: #fff; border: 1px solid #555; border-radius: 5px; font-size: 0.9em; min-width: 70px;}
+
+#spin-result-message-container { margin-top: 20px; min-height: 3.5em; color: #ffdd44; font-size: 1.2em; font-weight: bold; text-shadow: 0 0 8px #000, 0 0 5px #ffae00; }
+#spin-result-text { opacity: 0; /* JS la hará visible */ }
+#spin-winnings-line { display: none; /* JS la hará visible */ }
+#spin-winnings-amount { color: #33ff33; text-shadow: 0 0 5px #00cc00, 0 0 10px #00cc00; }
+
+#coin-burst-container { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); width: 180px; height: 120px; pointer-events: none; z-index: 10;}
+.coin-burst-particle { /* Asegurar que esta clase y su animación coinBurstAnimation existan */
+    position: absolute; width: 12px; height: 12px; background-color: #ffd700; border-radius: 50%;
+    opacity: 0; box-shadow: 0 0 5px #ffc000;
+}
+@keyframes coinBurstAnimation { /* Asegurar que esta animación exista */
+    0% { opacity: 1; transform: translateY(0) scale(1.2); }
+    100% { opacity: 0; transform: translateY(-100px) translateX(var(--tx, 0px)) scale(0.3); }
 }
 
-.tap-feedback-number {
-    position: absolute;
-    left:
+/* Estilos para otras secciones */
+.character-upgrade-area, .drop-bank, .tap-area { background-color: #202020; padding: 15px; margin-top: 10px; border-radius: 8px; border: 1px solid #383838; }
+ul { list-style: none; }
+#mission-list li, #invited-friends-list li { background-color: #282828; padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9em;}
+#mission-list li span, #invited-friends-list li span { flex: 1; margin-right: 5px; overflow-wrap: break-word; }
+input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; background-color: #333; border: 1px solid #555; color: #fff; border-radius: 4px; font-size: 0.9em;}
+
+/* --- ESTILOS PARA LA PESTAÑA "TAP TO EARN" --- */
+#tab-tap-to-earn .tap-area { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 15px; background-color: rgba(40, 0, 0, 0.3); border: 1px solid #ff000070; border-radius: 10px;}
+#tappable-rune { font-size: 7em; cursor: pointer; user-select: none; padding: 25px; border-radius: 50%; background: radial-gradient(circle, #660000, #330000); color: #ff4444; border: 3px solid #ff2222; box-shadow: 0 0 20px #ff0000aa, inset 0 0 15px #330000, 0 0 30px #000; transition: transform 0.05s ease-out, box-shadow 0.1s; text-shadow: 0 0 10px #fff;}
+#tappable-rune:active { transform: scale(0.92) rotate(-5deg); box-shadow: 0 0 30px #ff3333cc, inset 0 0 20px #220000, 0 0 40px #000; }
+#tab-tap-to-earn p { font-size: 1em; color: #ffddaa; text-shadow: 1px 1px 2px #000; }
+#tap-energy, #tap-max-energy, #tap-gain { font-weight: bold; color: #ffcc88; }
+#tap-feedback-container { position: relative; height: 40px; width: 120px; margin-top: 10px; overflow: hidden;}
+.tap-feedback-number { position: absolute; left: 50%; font-size: 1.3em; font-weight: bold; color: #33ff33; animation: floatUpAndFade 0.8s ease-out forwards; pointer-events: none; text-shadow: 0 0 5px #000;}
+@keyframes floatUpAndFade { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -50px); } }
+
+/* Media Queries (al final) */
+@media (max-width: 380px) { /* Ajustes para pantallas más pequeñas */
+    html { font-size: 14.5px; }
+    .nav-button { font-size: 0.6em; min-height: 45px; }
+    .reel { font-size: 2.5em; max-width: 60px; }
+    h2 { font-size: 1.25em; }
+    .action-button { font-size: 0.9em; padding: 10px 14px; }
+    #spin-button.spin-action { font-size: 1em; padding: 12px 18px; }
+    #tappable-rune { font-size: 6em; padding: 20px; }
+}
+@media (max-width: 320px) {
+    .nav-button { font-size: 0.55em; line-height: 1.2; }
+    .reel { font-size: 2.2em; }
+    #currency-display span { font-size: 0.75em; padding: 3px 5px; gap: 4px;}
+    #wallet-address-display { max-width: 50px;}
+    #tappable-rune { font-size: 5.5em; }
+}
