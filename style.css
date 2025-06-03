@@ -10,29 +10,29 @@ html {
 }
 
 body {
-    font-family: 'Helvetica Neue', Arial, sans-serif; /* Fuente común y legible */
-    background-color: #121212; /* Fondo oscuro principal */
-    color: #e0e0e0; /* Texto claro */
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #121212;
+    color: #e0e0e0;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start; /* Alinea arriba para que el scroll no cause problemas con 100vh en algunos móviles */
     min-height: 100vh;
     width: 100%;
-    overflow-x: hidden; /* Prevenir scroll horizontal */
-    -webkit-tap-highlight-color: transparent; /* Evitar resaltado azul en taps */
+    overflow-x: hidden; /* Prevenir scroll horizontal en el body */
+    -webkit-tap-highlight-color: transparent;
 }
 
 #game-container {
     width: 100%;
-    max-width: 480px; /* Ancho máximo para apariencia de app, ajustable */
-    min-height: 100vh; /* Ocupar toda la altura de la pantalla */
-    background-color: #1e1e1e; /* Fondo del contenedor del juego */
-    border-left: 1px solid #ff000030; /* Bordes sutiles si es más ancho que la pantalla */
+    max-width: 480px;
+    min-height: 100vh; /* Ocupar al menos toda la altura de la pantalla */
+    background-color: #1e1e1e;
+    border-left: 1px solid #ff000030;
     border-right: 1px solid #ff000030;
-    box-shadow: 0 0 25px #ff000050; /* Sombra roja más sutil */
+    box-shadow: 0 0 25px #ff000050;
     display: flex;
     flex-direction: column;
-    position: relative; /* Para contextos de apilamiento si es necesario */
+    position: relative;
 }
 
 #game-header {
@@ -42,12 +42,12 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-shrink: 0; /* Evitar que el header se encoja */
+    flex-shrink: 0;
 }
 
 #player-profile span, #currency-display span {
     margin-right: 8px;
-    font-size: 0.85em; /* Ligeramente más pequeño para caber */
+    font-size: 0.85em;
     font-weight: bold;
 }
 #currency-display span {
@@ -56,13 +56,19 @@ body {
     border-radius: 4px;
 }
 
-
 #game-content {
     flex-grow: 1;
     padding: 15px;
-    overflow-y: auto; /* Permitir scroll si el contenido es largo */
-    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
+
+p, .tab-description { /* Añadido para manejo de texto largo */
+    overflow-wrap: break-word;
+    word-wrap: break-word; /* Para navegadores más antiguos */
+    hyphens: auto; /* Opcional: para mejor división de palabras */
+}
+
 .tab-description {
     font-size: 0.9em;
     color: #aaa;
@@ -88,227 +94,23 @@ body {
     display: flex;
     background-color: #0a0a0a;
     border-top: 1px solid #ff0000;
-    flex-shrink: 0; /* Evitar que la nav se encoja */
+    flex-shrink: 0;
 }
 
 .nav-button {
-    background-color: transparent; /* Mejor integración */
+    background-color: transparent;
     color: #ccc;
     border: none;
-    border-right: 1px solid #222; /* Separadores sutiles */
-    padding: 12px 5px; /* Más padding vertical para tap */
+    border-right: 1px solid #222;
+    padding: 8px 5px; /* Padding ajustado */
     cursor: pointer;
     flex-grow: 1;
+    flex-basis: 0; /* Permite que los botones se encojan y crezcan equitativamente */
     text-align: center;
-    font-size: 0.75em; /* Nombres de pestañas más pequeños */
+    font-size: 0.7em; /* Reducido un poco más para textos más largos */
     font-weight: bold;
     transition: background-color 0.2s, color 0.2s;
-    white-space: nowrap; /* Evitar que el texto se parta en dos líneas */
-}
-.nav-button:last-child {
-    border-right: none;
-}
-
-.nav-button.active {
-    background-color: #ff0000;
-    color: #fff;
-}
-
-.nav-button:hover:not(.active) { /* Solo para escritorio, no muy relevante en móvil */
-    background-color: #222;
-}
-
-/* Botones de Acción Genéricos */
-.action-button {
-    display: block; /* Para que ocupen el ancho y se puedan centrar o dar margen */
-    width: 100%;
-    background: linear-gradient(to bottom, #c00000, #900000); /* Gradiente rojo oscuro */
-    color: #fff;
-    border: 1px solid #600000;
-    padding: 12px 15px; /* Buen tamaño para tap */
-    cursor: pointer;
-    font-weight: bold;
-    text-transform: uppercase;
-    border-radius: 6px;
-    margin-top: 10px;
-    font-size: 0.95em;
-    transition: background 0.2s;
-    text-shadow: 1px 1px 2px #00000080;
-}
-.action-button:hover { /* Para escritorio */
-    background: linear-gradient(to bottom, #d00000, #a00000);
-}
-.action-button:active { /* Feedback en móvil y click */
-    background: linear-gradient(to bottom, #a00000, #700000);
-    transform: translateY(1px);
-}
-.action-button.special-action {
-    background: linear-gradient(to bottom, #ffcc00, #ffaa00);
-    color: #333;
-    border-color: #cc8800;
-}
-.action-button.special-action:hover {
-    background: linear-gradient(to bottom, #ffe066, #ffcc33);
-}
-.action-button.special-action:active {
-    background: linear-gradient(to bottom, #ccaa00, #aa8800);
-}
-.action-button[disabled] {
-    background: #555;
-    color: #888;
-    border-color: #444;
-    cursor: not-allowed;
-    text-shadow: none;
-}
-
-
-/* Estilos específicos para la Ruleta de Hades (Tragamonedas) */
-.slot-machine-area {
-    text-align: center;
-    padding: 15px;
-    background-color: #151515;
-    border-radius: 10px;
-    border: 1px solid #333;
-}
-
-.slot-reels {
-    display: flex;
-    justify-content: space-around; /* Distribuir carretes */
-    margin-bottom: 20px;
-}
-
-.reel {
-    font-size: 2.8em; /* Ajustar tamaño para móviles */
-    font-weight: bold;
-    width: calc(33% - 10px); /* Ancho flexible */
-    aspect-ratio: 3/4; /* Mantener proporción */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 2px solid #444;
-    background-color: #0a0a0a;
-    color: #ffcc00;
-    border-radius: 8px;
-    overflow: hidden; /* Para símbolos más grandes que el carrete */
-}
-
-.slot-controls {
-    margin-bottom: 15px;
-}
-.slot-controls p {
-    margin-bottom: 10px;
-    font-size: 1em;
-}
-.multiplier-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 15px;
-}
-.multiplier-container label {
-    margin-right: 8px;
-    font-size: 0.9em;
-}
-.slot-controls select {
-    padding: 10px; /* Más fácil de tocar */
-    background-color: #333;
-    color: #fff;
-    border: 1px solid #555;
-    border-radius: 5px;
-    font-size: 0.9em;
-}
-
-#spin-button.spin-action { /* Botón de girar más prominente */
-    padding: 15px 20px;
-    font-size: 1.1em;
-    background: linear-gradient(to bottom, #008000, #005000); /* Verde para acción primaria */
-    border-color: #003000;
-}
-#spin-button.spin-action:hover {
-    background: linear-gradient(to bottom, #009000, #006000);
-}
-#spin-button.spin-action:active {
-    background: linear-gradient(to bottom, #006000, #004000);
-}
-
-
-#spin-result-message {
-    margin-top: 15px;
-    font-size: 1.1em;
-    color: #ffcc00;
-    min-height: 1.5em; /* Para evitar saltos de layout */
-}
-
-.side-buttons {
-    margin-top: 20px;
-    display: flex;
-    gap: 10px; /* Espacio entre botones */
-}
-.side-buttons .action-button {
-    flex: 1; /* Ocupar espacio disponible equitativamente */
-    font-size: 0.85em;
-}
-
-/* Estilos para otras secciones */
-.character-upgrade-area, .drop-bank {
-    background-color: #202020;
-    padding: 15px;
-    margin-top: 10px;
-    border-radius: 8px;
-    border: 1px solid #383838;
-}
-h2 {
-    color: #ff4500;
-    text-align: center;
-    text-transform: uppercase;
-    border-bottom: 1px dashed #444;
-    padding-bottom: 8px;
-    margin-bottom: 15px;
-    font-size: 1.3em;
-}
-h3 {
-    color: #e0e0e0;
-    margin-bottom: 10px;
-    font-size: 1.1em;
-}
-ul {
-    list-style: none;
-    padding-left: 0;
-}
-#mission-list li, #invited-friends-list li {
-    background-color: #282828;
-    padding: 10px;
-    margin-bottom: 8px;
-    border-radius: 4px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.9em;
-}
-input[type="text"] {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    background-color: #333;
-    border: 1px solid #555;
-    color: #fff;
-    border-radius: 4px;
-    font-size: 0.9em;
-}
-
-/* Ajustes menores para pantallas muy pequeñas si es necesario */
-@media (max-width: 360px) {
-    html {
-        font-size: 14px; /* Reducir ligeramente la base de fuente */
-    }
-    .nav-button {
-        font-size: 0.7em;
-        padding: 10px 3px;
-    }
-    .reel {
-        font-size: 2.5em;
-    }
-    h2 {
-        font-size: 1.2em;
-    }
-}
+    
+    white-space: normal; /* PERMITIR que el texto se divida en líneas */
+    line-height: 1.2;   /* Ajustar interlineado si el texto se envuelve */
+    min
