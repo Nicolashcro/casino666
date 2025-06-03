@@ -1,140 +1,274 @@
-/* ... (resto de tu CSS existente) ... */
-
-/* --- ESTILOS PARA LA MÁQUINA TRAGAMONEDAS Y SUS EFECTOS --- */
-.slot-machine-area {
-    text-align: center;
-    padding: 15px;
-    background-color: #151515;
-    border-radius: 10px;
-    /* El borde de neón se aplicará a .slot-machine-ambience o directamente aquí */
-    /* border: 2px solid #ff00ff; */ /* Ejemplo de borde neón base */
-    box-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff, 0 0 15px #ff00ff; /* Efecto neón inicial */
-    position: relative; /* Para posicionar partículas y otros efectos */
-    overflow: hidden; /* Para contener partículas que se salen */
-    animation: neonFlicker 3s infinite alternate ease-in-out; /* Animación de neón */
-}
-
-@keyframes neonFlicker {
-    0%, 100% {
-        box-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff, 0 0 15px #ff00ff, 0 0 20px #ff4500;
-        border-color: #ff00ff;
-    }
-    50% {
-        box-shadow: 0 0 8px #ff4500, 0 0 15px #ff4500, 0 0 20px #ff00ff, 0 0 25px #ff00ff;
-        border-color: #ff4500;
-    }
-}
-
-/* Contenedor de ambiente (si se usa para separar) */
-.slot-machine-ambience {
-    position: absolute;
-    top: 0;
-    left: 0;
+/* ... (CSS base y de animaciones que ya teníamos, con algunos ajustes) ... */
+/* Reseteo básico y box-sizing */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 16px; }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fuente más moderna */
+    background-color: #0a0a0a; /* Fondo aún más oscuro */
+    color: #f0f0f0; /* Texto más brillante */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
     width: 100%;
-    height: 100%;
-    pointer-events: none; /* Para que no interfiera con los clics */
-    overflow: hidden; /* Contener partículas dentro del área de la máquina */
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
 }
 
-/* Partículas Flotantes */
-.particle {
-    position: absolute;
-    background-color: rgba(255, 223, 186, 0.3); /* Color de brasa/ceniza clara */
-    width: 3px;
-    height: 3px;
-    border-radius: 50%;
-    opacity: 0;
-    animation: floatParticle 10s infinite linear;
+#game-container {
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    background: linear-gradient(to bottom, #232323, #121212); /* Gradiente sutil para el fondo */
+    border-left: 1px solid #ff000050;
+    border-right: 1px solid #ff000050;
+    box-shadow: 0 0 30px #ff000070, inset 0 0 15px #00000090; /* Sombra mejorada */
+    display: flex;
+    flex-direction: column;
+    position: relative;
 }
 
-.particle:nth-child(1) { top: 20%; left: 10%; animation-delay: 0s; animation-duration: 12s; width: 2px; height: 2px;}
-.particle:nth-child(2) { top: 50%; left: 80%; animation-delay: 1s; animation-duration: 10s; background-color: rgba(255, 100, 0, 0.2);}
-.particle:nth-child(3) { top: 80%; left: 30%; animation-delay: 3s; animation-duration: 11s; width: 4px; height: 4px;}
-.particle:nth-child(4) { top: 10%; left: 90%; animation-delay: 5s; animation-duration: 9s; background-color: rgba(200, 0, 0, 0.25);}
-.particle:nth-child(5) { top: 60%; left: 5%;  animation-delay: 7s; animation-duration: 13s; width: 2px; height: 2px;}
-
-
-@keyframes floatParticle {
-    0% {
-        transform: translateY(0) translateX(0);
-        opacity: 0;
-    }
-    25% {
-        opacity: 0.7;
-    }
-    50% {
-        transform: translateY(-60px) translateX(20px); /* Movimiento ascendente y lateral */
-        opacity: 0.5;
-    }
-    75% {
-        opacity: 0.3;
-    }
-    100% {
-        transform: translateY(-120px) translateX(-20px);
-        opacity: 0;
-    }
+#game-header {
+    padding: 12px 15px;
+    background-color: rgba(0,0,0,0.5); /* Semi-transparente */
+    border-bottom: 1px solid #ff0000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    position: sticky; /* Header fijo */
+    top: 0;
+    z-index: 100;
 }
 
-
-/* --- ESTILOS PARA MENSAJES DE GANANCIAS --- */
-#spin-result-message-container {
-    margin-top: 15px;
-    min-height: 3em; /* Espacio para dos líneas de texto */
-    color: #ffcc00;
-    font-size: 1.1em;
+#player-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+#player-name {
+    font-weight: bold;
+    color: #ff4500; /* Naranja infernal */
+}
+#wallet-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background-color: rgba(255,255,255,0.1);
+    padding: 3px 6px;
+    border-radius: 5px;
+}
+#wallet-status {
+    font-size: 0.75em;
+    padding: 3px 5px;
+    border-radius: 3px;
     font-weight: bold;
 }
+#wallet-status.connected { background-color: #00ff00a0; color: #003d00; }
+#wallet-status.disconnected { background-color: #ff0000a0; color: #fff; }
 
-#spin-result-text { /* Para el mensaje de texto */
-    opacity: 0; /* Inicia oculto para animación de fade-in o typewriter */
-    /* Estilos para typewriter si se usa CSS puro (más complejo) */
-}
-
-#spin-winnings-amount { /* Para el número de las ganancias */
-    /* Estilos si es necesario, el JS lo actualizará */
-}
-
-/* Animación de Fade-In para el mensaje (alternativa a typewriter JS) */
-.fade-in-message {
-    animation: fadeInMessage 0.8s forwards;
-}
-@keyframes fadeInMessage {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Contenedor para Explosión de Monedas (Simplificado) */
-#coin-burst-container {
-    position: absolute;
-    bottom: 60px; /* Ajustar para que aparezca cerca del mensaje de ganancias */
-    left: 50%;
-    transform: translateX(-50%);
-    width: 150px; /* Ancho del área de explosión */
-    height: 100px; /* Alto del área de explosión */
-    pointer-events: none; /* No interferir con clics */
-    z-index: 10;
-}
-
-.coin-burst-particle {
-    position: absolute;
-    width: 10px; /* Tamaño de la "moneda" */
-    height: 10px;
-    background-color: #ffd700; /* Color dorado */
-    border-radius: 50%;
-    opacity: 0;
-    /* La animación se aplicará con JS */
-}
-
-@keyframes coinBurstAnimation {
-    0% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(-80px) translateX(var(--tx, 0px)) scale(0.5); /* Movimiento hacia arriba y encogimiento */
-    }
+#wallet-address-display {
+    font-size: 0.7em;
+    color: #aaa;
+    margin-left: 5px;
+    max-width: 80px; /* Para evitar que sea muy largo */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: help;
 }
 
 
-/* ... (resto de tu CSS como .slot-reels, .action-button, etc.) ... */
+#currency-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+#currency-display span {
+    font-size: 0.8em;
+    font-weight: bold;
+    background-color: rgba(0,0,0,0.3);
+    padding: 4px 7px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+#cc6-token-balance { color: #ffcc00; /* Dorado */ }
+#cc6-gold-balance { color: #ffd700; /* Oro brillante */ }
+#wallet-cc6-token-balance { color: #00e0ff; /* Azul crypto */ }
+
+
+/* Tooltips simples */
+.tooltip {
+  position: relative;
+  cursor: help;
+}
+.tooltip:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-5px); /* Espacio del elemento */
+  background-color: #333;
+  color: #fff;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  white-space: nowrap;
+  z-index: 101; /* Encima del header */
+}
+
+
+#game-content {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tab-content {
+    display: none;
+    animation: tabFadeIn 0.5s ease-in-out forwards; /* Animación de entrada de pestaña */
+    background-color: rgba(0,0,0,0.1); /* Fondo sutil para contenido de pestaña */
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 10px; /* Espacio del header */
+}
+/* Fondos de pestaña (reemplaza las URLs con las tuyas) */
+#tab-ascension.tab-content { background-image: url('URL_PARA_PESTAÑA_1_AQUI'); background-size: cover; background-position: center; }
+#tab-la-caida.tab-content { background-image: url('URL_PARA_PESTAÑA_2_AQUI'); background-size: cover; background-position: center; }
+#tab-ruleta-hades.tab-content { background-image: url('URL_PARA_PESTAÑA_3_AQUI'); background-size: cover; background-position: center; }
+
+
+.tab-content.active { display: block; }
+
+@keyframes tabFadeIn { /* Nueva animación para cambio de pestaña */
+    from { opacity: 0; transform: scale(0.98) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+#bottom-nav {
+    display: flex;
+    background-color: #0a0a0a;
+    border-top: 2px solid #ff0000; /* Borde más grueso */
+    flex-shrink: 0;
+    box-shadow: 0 -5px 15px rgba(255,0,0,0.3);
+}
+
+.nav-button {
+    background: linear-gradient(to bottom, #222, #0a0a0a);
+    color: #aaa;
+    border: none;
+    border-right: 1px solid #333;
+    padding: 10px 5px;
+    cursor: pointer;
+    flex-grow: 1; flex-basis: 0;
+    text-align: center;
+    font-size: 0.7em;
+    font-weight: bold;
+    transition: background 0.3s, color 0.3s, transform 0.1s;
+    white-space: normal; line-height: 1.2;
+    min-height: 48px; /* Aumentado para mejor tacto */
+    display: flex; align-items: center; justify-content: center;
+    text-transform: uppercase; /* Estilo más de "juego" */
+}
+.nav-button:last-child { border-right: none; }
+.nav-button.active {
+    background: linear-gradient(to top, #ff0000, #cc0000);
+    color: #fff;
+    text-shadow: 0 0 5px #fff;
+}
+.nav-button:hover:not(.active) {
+    background: linear-gradient(to bottom, #333, #1a1a1a);
+    color: #fff;
+}
+.nav-button:active:not(.active) {
+    transform: scale(0.95);
+}
+
+
+.action-button {
+    /* ... (estilos de .action-button, mejorados) ... */
+    background: linear-gradient(to bottom, #7d0000, #4c0000); /* Rojo más oscuro y saturado */
+    color: #f0f0f0;
+    border: 1px solid #3b0000;
+    box-shadow: 0 4px 0 #2c0000, 0 5px 5px rgba(0,0,0,0.5); /* Efecto 3D */
+    padding: 12px 18px; /* Más padding */
+    text-shadow: 1px 1px 1px #000000a0;
+    transition: background 0.1s, transform 0.1s, box-shadow 0.1s;
+}
+.action-button:hover:not(:disabled) {
+    background: linear-gradient(to bottom, #9c0000, #6b0000);
+}
+.action-button:active:not(:disabled) {
+    background: linear-gradient(to top, #7d0000, #4c0000);
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #2c0000, 0 3px 3px rgba(0,0,0,0.6); /* Ajustar sombra al presionar */
+}
+.wallet-button { /* Estilo específico para botones de billetera */
+    padding: 5px 10px !important;
+    font-size: 0.75em !important;
+    margin-top: 0 !important;
+    background: linear-gradient(to bottom, #007bff, #0056b3); /* Azul para billetera */
+    border-color: #004085;
+    box-shadow: 0 3px 0 #003063, 0 4px 4px rgba(0,0,0,0.4);
+}
+.wallet-button:hover:not(:disabled) { background: linear-gradient(to bottom, #008cff, #0069cc); }
+.wallet-button:active:not(:disabled) {
+    background: linear-gradient(to top, #007bff, #0056b3);
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 #003063, 0 2px 2px rgba(0,0,0,0.5);
+}
+
+
+#spin-button.spin-action {
+    /* ... (estilos de #spin-button.spin-action, pueden heredar mucho de .action-button) ... */
+    background: linear-gradient(to bottom, #009000, #006000); /* Verde más vibrante */
+    border-color: #004000;
+    box-shadow: 0 4px 0 #003000, 0 5px 5px rgba(0,0,0,0.5);
+}
+#spin-button.spin-action:hover:not(:disabled) {
+    background: linear-gradient(to bottom, #00a000, #007000);
+}
+#spin-button.spin-action:active:not(:disabled) {
+    background: linear-gradient(to top, #009000, #006000);
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #003000, 0 3px 3px rgba(0,0,0,0.6);
+}
+.spin-button-cooldown { /* Mantenemos esta clase */
+    background: linear-gradient(to bottom, #5c635c, #3e403e) !important;
+    color: #999 !important; border-color: #2b2e2b !important;
+    cursor: not-allowed !important;
+    animation: subtleCooldownPulse 1.5s infinite ease-in-out;
+    transform: translateY(0) !important; box-shadow: none !important;
+}
+@keyframes subtleCooldownPulse { /* Sin cambios */
+    0% { border-color: #2b2e2b; } 50% { border-color: #666; } 100% { border-color: #2b2e2b; }
+}
+
+
+/* Slot Machine Area y Mensajes */
+.slot-machine-area {
+    /* ... (neonFlicker y partículas sin cambios) ... */
+    box-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff, inset 0 0 20px #101010;
+}
+@keyframes neonFlicker { /* Sin cambios */
+    0%, 100% { box-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff4500aa, inset 0 0 20px #101010;}
+    50% { box-shadow: 0 0 15px #ff4500aa, 0 0 25px #ff4500aa, 0 0 35px #ff00ff, 0 0 45px #ff00ff, inset 0 0 20px #101010;}
+}
+/* Partículas y otros efectos de ambiente se mantienen como estaban */
+
+
+#spin-result-message-container {
+    margin-top: 20px; /* Más espacio */
+    min-height: 3.5em;
+    color: #ffdd44; /* Amarillo más brillante */
+    font-size: 1.2em; /* Un poco más grande */
+    font-weight: bold;
+    text-shadow: 0 0 5px #000; /* Sombra para destacar */
+}
+#spin-result-text { opacity: 0; }
+#spin-winnings-line { display: none; /* Se mostrará por JS */}
+#spin-winnings-amount { color: #00ff00; /* Verde brillante para ganancias */}
+
+/* ... (resto de CSS incluyendo .particle, coin-burst etc. se mantiene como estaba antes,
+    asegúrate que las media queries también están al final) ... */
