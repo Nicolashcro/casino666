@@ -1,140 +1,23 @@
-/* ... (resto de tu CSS existente) ... */
+/* --- ESTILOS DE PESTAÑAS Y SUS FONDOS --- */
 
-/* --- ESTILOS PARA LA MÁQUINA TRAGAMONEDAS Y SUS EFECTOS --- */
-.slot-machine-area {
-    text-align: center;
-    padding: 15px;
-    background-color: #151515;
-    border-radius: 10px;
-    /* El borde de neón se aplicará a .slot-machine-ambience o directamente aquí */
-    /* border: 2px solid #ff00ff; */ /* Ejemplo de borde neón base */
-    box-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff, 0 0 15px #ff00ff; /* Efecto neón inicial */
-    position: relative; /* Para posicionar partículas y otros efectos */
-    overflow: hidden; /* Para contener partículas que se salen */
-    animation: neonFlicker 3s infinite alternate ease-in-out; /* Animación de neón */
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+    padding: 15px; /* Mantenemos el padding para que el contenido no toque los bordes */
+    position: relative; /* Necesario si en el futuro quieres añadir superposiciones de color sobre el fondo */
+    /* Propiedades comunes de fondo que se aplicarán si no hay una imagen específica */
+    background-color: #1e1e1e; /* Un color de fondo por defecto si la imagen no carga o para otras pestañas */
+    background-size: cover; /* Asegura que la imagen cubra todo el espacio */
+    background-position: center center; /* Centra la imagen */
+    background-repeat: no-repeat; /* Evita que la imagen se repita */
 }
 
-@keyframes neonFlicker {
-    0%, 100% {
-        box-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff, 0 0 15px #ff00ff, 0 0 20px #ff4500;
-        border-color: #ff00ff;
-    }
-    50% {
-        box-shadow: 0 0 8px #ff4500, 0 0 15px #ff4500, 0 0 20px #ff00ff, 0 0 25px #ff00ff;
-        border-color: #ff4500;
-    }
+/* Pestaña 1: Ascensión */
+#tab-ascension.tab-content {
+    background-image: url('https://lh3.googleusercontent.com/gg-dl/AJfQ9KQkkXEKExrUes0MMDaD5hOlnFtKVUW6mG7M8ZIiabsRXcdi2n4BoFQd5C2v8in9xxfPyN5ADXyda-GOFu8Dy_GZgpHDvfQTwa6CyYrwkAOtz3BpI8lG2n_H0Bf6fmSm76AoQo_Nw2IjycSmFj2tWyj26Oof4cchdrcd4kEvH53gd6S5=s1024?authuser=1');
+    /* Las propiedades background-size, position, repeat se heredan de .tab-content o se pueden redefinir aquí si es necesario */
 }
 
-/* Contenedor de ambiente (si se usa para separar) */
-.slot-machine-ambience {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; /* Para que no interfiera con los clics */
-    overflow: hidden; /* Contener partículas dentro del área de la máquina */
-}
-
-/* Partículas Flotantes */
-.particle {
-    position: absolute;
-    background-color: rgba(255, 223, 186, 0.3); /* Color de brasa/ceniza clara */
-    width: 3px;
-    height: 3px;
-    border-radius: 50%;
-    opacity: 0;
-    animation: floatParticle 10s infinite linear;
-}
-
-.particle:nth-child(1) { top: 20%; left: 10%; animation-delay: 0s; animation-duration: 12s; width: 2px; height: 2px;}
-.particle:nth-child(2) { top: 50%; left: 80%; animation-delay: 1s; animation-duration: 10s; background-color: rgba(255, 100, 0, 0.2);}
-.particle:nth-child(3) { top: 80%; left: 30%; animation-delay: 3s; animation-duration: 11s; width: 4px; height: 4px;}
-.particle:nth-child(4) { top: 10%; left: 90%; animation-delay: 5s; animation-duration: 9s; background-color: rgba(200, 0, 0, 0.25);}
-.particle:nth-child(5) { top: 60%; left: 5%;  animation-delay: 7s; animation-duration: 13s; width: 2px; height: 2px;}
-
-
-@keyframes floatParticle {
-    0% {
-        transform: translateY(0) translateX(0);
-        opacity: 0;
-    }
-    25% {
-        opacity: 0.7;
-    }
-    50% {
-        transform: translateY(-60px) translateX(20px); /* Movimiento ascendente y lateral */
-        opacity: 0.5;
-    }
-    75% {
-        opacity: 0.3;
-    }
-    100% {
-        transform: translateY(-120px) translateX(-20px);
-        opacity: 0;
-    }
-}
-
-
-/* --- ESTILOS PARA MENSAJES DE GANANCIAS --- */
-#spin-result-message-container {
-    margin-top: 15px;
-    min-height: 3em; /* Espacio para dos líneas de texto */
-    color: #ffcc00;
-    font-size: 1.1em;
-    font-weight: bold;
-}
-
-#spin-result-text { /* Para el mensaje de texto */
-    opacity: 0; /* Inicia oculto para animación de fade-in o typewriter */
-    /* Estilos para typewriter si se usa CSS puro (más complejo) */
-}
-
-#spin-winnings-amount { /* Para el número de las ganancias */
-    /* Estilos si es necesario, el JS lo actualizará */
-}
-
-/* Animación de Fade-In para el mensaje (alternativa a typewriter JS) */
-.fade-in-message {
-    animation: fadeInMessage 0.8s forwards;
-}
-@keyframes fadeInMessage {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Contenedor para Explosión de Monedas (Simplificado) */
-#coin-burst-container {
-    position: absolute;
-    bottom: 60px; /* Ajustar para que aparezca cerca del mensaje de ganancias */
-    left: 50%;
-    transform: translateX(-50%);
-    width: 150px; /* Ancho del área de explosión */
-    height: 100px; /* Alto del área de explosión */
-    pointer-events: none; /* No interferir con clics */
-    z-index: 10;
-}
-
-.coin-burst-particle {
-    position: absolute;
-    width: 10px; /* Tamaño de la "moneda" */
-    height: 10px;
-    background-color: #ffd700; /* Color dorado */
-    border-radius: 50%;
-    opacity: 0;
-    /* La animación se aplicará con JS */
-}
-
-@keyframes coinBurstAnimation {
-    0% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(-80px) translateX(var(--tx, 0px)) scale(0.5); /* Movimiento hacia arriba y encogimiento */
-    }
-}
-
-
-/* ... (resto de tu CSS como .slot-reels, .action-button, etc.) ... */
+/* Pestaña 2: La Caída */
+#tab-la-caida.tab-content {
+    background-image: url('
