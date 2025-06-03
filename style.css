@@ -1,116 +1,88 @@
-/* Reseteo básico y box-sizing */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* ... (resto de tu CSS existente) ... */
 
-html {
-    font-size: 16px; /* Base para unidades rem/em */
-}
-
-body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    background-color: #121212;
-    color: #e0e0e0;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start; /* Alinea arriba para que el scroll no cause problemas con 100vh en algunos móviles */
-    min-height: 100vh;
+/* --- ESTILOS DEL BOTÓN DE ACCIÓN Y SPIN --- */
+.action-button {
+    display: block; 
     width: 100%;
-    overflow-x: hidden; /* Prevenir scroll horizontal en el body */
-    -webkit-tap-highlight-color: transparent;
-}
-
-#game-container {
-    width: 100%;
-    max-width: 480px;
-    min-height: 100vh; /* Ocupar al menos toda la altura de la pantalla */
-    background-color: #1e1e1e;
-    border-left: 1px solid #ff000030;
-    border-right: 1px solid #ff000030;
-    box-shadow: 0 0 25px #ff000050;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-}
-
-#game-header {
-    padding: 10px 15px;
-    background-color: #0a0a0a;
-    border-bottom: 1px solid #ff0000;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-#player-profile span, #currency-display span {
-    margin-right: 8px;
-    font-size: 0.85em;
-    font-weight: bold;
-}
-#currency-display span {
-    background-color: #333;
-    padding: 3px 6px;
-    border-radius: 4px;
-}
-
-#game-content {
-    flex-grow: 1;
-    padding: 15px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-p, .tab-description { /* Añadido para manejo de texto largo */
-    overflow-wrap: break-word;
-    word-wrap: break-word; /* Para navegadores más antiguos */
-    hyphens: auto; /* Opcional: para mejor división de palabras */
-}
-
-.tab-description {
-    font-size: 0.9em;
-    color: #aaa;
-    text-align: center;
-    margin-bottom: 15px;
-}
-
-.tab-content {
-    display: none;
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-#bottom-nav {
-    display: flex;
-    background-color: #0a0a0a;
-    border-top: 1px solid #ff0000;
-    flex-shrink: 0;
-}
-
-.nav-button {
-    background-color: transparent;
-    color: #ccc;
-    border: none;
-    border-right: 1px solid #222;
-    padding: 8px 5px; /* Padding ajustado */
+    background: linear-gradient(to bottom, #c00000, #900000); 
+    color: #fff;
+    border: 1px solid #600000;
+    padding: 12px 15px; 
     cursor: pointer;
-    flex-grow: 1;
-    flex-basis: 0; /* Permite que los botones se encojan y crezcan equitativamente */
-    text-align: center;
-    font-size: 0.7em; /* Reducido un poco más para textos más largos */
     font-weight: bold;
-    transition: background-color 0.2s, color 0.2s;
-    
-    white-space: normal; /* PERMITIR que el texto se divida en líneas */
-    line-height: 1.2;   /* Ajustar interlineado si el texto se envuelve */
-    min
+    text-transform: uppercase;
+    border-radius: 6px;
+    margin-top: 10px;
+    font-size: 0.95em;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.1s; /* Agregada transición para transform y box-shadow */
+    text-shadow: 1px 1px 2px #00000080;
+    overflow-wrap: break-word; 
+}
+.action-button:hover { 
+    background: linear-gradient(to bottom, #d00000, #a00000);
+}
+
+/* Feedback visual al presionar CUALQUIER action-button */
+.action-button:active { 
+    background: linear-gradient(to bottom, #a00000, #700000);
+    transform: translateY(2px); /* Hundir ligeramente el botón */
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); /* Sombra interior para efecto de presionado */
+}
+
+/* Botón de GIRAR específico */
+#spin-button.spin-action { 
+    padding: 15px 20px;
+    font-size: 1.1em;
+    background: linear-gradient(to bottom, #008000, #005000); 
+    border-color: #003000;
+}
+#spin-button.spin-action:hover:not(:disabled) { /* :not(:disabled) para que no aplique hover si está en cooldown */
+    background: linear-gradient(to bottom, #009000, #006000);
+}
+
+/* Feedback visual al presionar el BOTÓN DE GIRAR (puede heredar de .action-button:active o ser más específico) */
+#spin-button.spin-action:active:not(:disabled) {
+    background: linear-gradient(to bottom, #006000, #004000);
+    transform: translateY(3px); /* Un poco más de hundimiento para el botón principal */
+    box-shadow: inset 0 3px 5px rgba(0,0,0,0.4);
+}
+
+/* NUEVA CLASE para el estado de Enfriamiento/Deshabilitado del botón GIRAR */
+.spin-button-cooldown {
+    background: linear-gradient(to bottom, #5c635c, #3e403e) !important; /* Fondo oscuro/grisáceo */
+    color: #999 !important; /* Texto apagado */
+    border-color: #2b2e2b !important;
+    cursor: not-allowed !important;
+    /* Animación de "carga" sutil: un pulso en la opacidad del texto o borde */
+    animation: subtleCooldownPulse 1.5s infinite ease-in-out;
+    transform: translateY(0) !important; /* Asegurar que no se quede hundido */
+    box-shadow: none !important; /* Quitar sombra de presionado */
+}
+
+@keyframes subtleCooldownPulse {
+    0% {
+        border-color: #2b2e2b;
+        /* opacity: 0.8; */ /* Podrías jugar con la opacidad general del botón */
+    }
+    50% {
+        border-color: #666; /* Borde que resalta sutilmente */
+        /* opacity: 1; */
+    }
+    100% {
+        border-color: #2b2e2b;
+        /* opacity: 0.8; */
+    }
+}
+
+.action-button[disabled] { /* Estilo general para botones deshabilitados si no es el de cooldown */
+    background: #555;
+    color: #888;
+    border-color: #444;
+    cursor: not-allowed;
+    text-shadow: none;
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+
+/* ... (resto de tu CSS existente como .slot-machine-area, .reel, etc.) ... */
