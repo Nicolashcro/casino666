@@ -1,274 +1,59 @@
-/* ... (CSS base y de animaciones que ya teníamos, con algunos ajustes) ... */
-/* Reseteo básico y box-sizing */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html { font-size: 16px; }
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fuente más moderna */
-    background-color: #0a0a0a; /* Fondo aún más oscuro */
-    color: #f0f0f0; /* Texto más brillante */
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-    width: 100%;
-    overflow-x: hidden;
-    -webkit-tap-highlight-color: transparent;
-}
+/* ... (CSS base y responsivo como en la penúltima respuesta, incluyendo .tooltip, fuentes, etc.) ... */
+/* Asegúrate que el CSS para #game-container, #game-header, #game-content, .tab-content, 
+   .action-button, .wallet-button, #spin-button, .spin-button-cooldown, 
+   .slot-machine-area, .particle, #spin-result-message-container, #coin-burst-container
+   y #bottom-nav esté presente y correcto como lo teníamos)
+*/
 
-#game-container {
-    width: 100%;
-    max-width: 480px;
-    min-height: 100vh;
-    background: linear-gradient(to bottom, #232323, #121212); /* Gradiente sutil para el fondo */
-    border-left: 1px solid #ff000050;
-    border-right: 1px solid #ff000050;
-    box-shadow: 0 0 30px #ff000070, inset 0 0 15px #00000090; /* Sombra mejorada */
+/* --- ESTILOS PARA LA NUEVA PESTAÑA "TAP TO EARN" --- */
+#tab-tap-to-earn .tap-area {
     display: flex;
     flex-direction: column;
-    position: relative;
-}
-
-#game-header {
-    padding: 12px 15px;
-    background-color: rgba(0,0,0,0.5); /* Semi-transparente */
-    border-bottom: 1px solid #ff0000;
-    display: flex;
-    justify-content: space-between;
     align-items: center;
-    flex-shrink: 0;
-    position: sticky; /* Header fijo */
-    top: 0;
-    z-index: 100;
+    justify-content: center;
+    padding: 20px;
+    gap: 15px; /* Espacio entre elementos */
+    background-color: rgba(255, 0, 0, 0.1); /* Fondo rojizo sutil */
+    border: 1px solid #ff000050;
+    border-radius: 10px;
 }
 
-#player-profile {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-#player-name {
-    font-weight: bold;
-    color: #ff4500; /* Naranja infernal */
-}
-#wallet-info {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background-color: rgba(255,255,255,0.1);
-    padding: 3px 6px;
-    border-radius: 5px;
-}
-#wallet-status {
-    font-size: 0.75em;
-    padding: 3px 5px;
-    border-radius: 3px;
-    font-weight: bold;
-}
-#wallet-status.connected { background-color: #00ff00a0; color: #003d00; }
-#wallet-status.disconnected { background-color: #ff0000a0; color: #fff; }
-
-#wallet-address-display {
-    font-size: 0.7em;
-    color: #aaa;
-    margin-left: 5px;
-    max-width: 80px; /* Para evitar que sea muy largo */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    cursor: help;
-}
-
-
-#currency-display {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-#currency-display span {
-    font-size: 0.8em;
-    font-weight: bold;
-    background-color: rgba(0,0,0,0.3);
-    padding: 4px 7px;
-    border-radius: 4px;
-    border: 1px solid rgba(255,255,255,0.1);
-}
-#cc6-token-balance { color: #ffcc00; /* Dorado */ }
-#cc6-gold-balance { color: #ffd700; /* Oro brillante */ }
-#wallet-cc6-token-balance { color: #00e0ff; /* Azul crypto */ }
-
-
-/* Tooltips simples */
-.tooltip {
-  position: relative;
-  cursor: help;
-}
-.tooltip:hover::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%) translateY(-5px); /* Espacio del elemento */
-  background-color: #333;
-  color: #fff;
-  padding: 5px 8px;
-  border-radius: 4px;
-  font-size: 0.75em;
-  white-space: nowrap;
-  z-index: 101; /* Encima del header */
-}
-
-
-#game-content {
-    flex-grow: 1;
-    padding: 15px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-.tab-content {
-    display: none;
-    animation: tabFadeIn 0.5s ease-in-out forwards; /* Animación de entrada de pestaña */
-    background-color: rgba(0,0,0,0.1); /* Fondo sutil para contenido de pestaña */
-    padding: 15px;
-    border-radius: 8px;
-    margin-top: 10px; /* Espacio del header */
-}
-/* Fondos de pestaña (reemplaza las URLs con las tuyas) */
-#tab-ascension.tab-content { background-image: url('URL_PARA_PESTAÑA_1_AQUI'); background-size: cover; background-position: center; }
-#tab-la-caida.tab-content { background-image: url('URL_PARA_PESTAÑA_2_AQUI'); background-size: cover; background-position: center; }
-#tab-ruleta-hades.tab-content { background-image: url('URL_PARA_PESTAÑA_3_AQUI'); background-size: cover; background-position: center; }
-
-
-.tab-content.active { display: block; }
-
-@keyframes tabFadeIn { /* Nueva animación para cambio de pestaña */
-    from { opacity: 0; transform: scale(0.98) translateY(10px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-#bottom-nav {
-    display: flex;
-    background-color: #0a0a0a;
-    border-top: 2px solid #ff0000; /* Borde más grueso */
-    flex-shrink: 0;
-    box-shadow: 0 -5px 15px rgba(255,0,0,0.3);
-}
-
-.nav-button {
-    background: linear-gradient(to bottom, #222, #0a0a0a);
-    color: #aaa;
-    border: none;
-    border-right: 1px solid #333;
-    padding: 10px 5px;
+#tappable-rune {
+    font-size: 80px; /* Tamaño grande para el icono/imagen de tap */
     cursor: pointer;
-    flex-grow: 1; flex-basis: 0;
-    text-align: center;
-    font-size: 0.7em;
+    user-select: none; /* Evitar selección de texto al tocar rápido */
+    padding: 20px;
+    border-radius: 50%;
+    background-color: #330000;
+    color: #ff6666;
+    border: 3px solid #ff3333;
+    box-shadow: 0 0 15px #ff0000, inset 0 0 10px #660000;
+    transition: transform 0.05s ease-out, box-shadow 0.1s;
+}
+
+#tappable-rune:active {
+    transform: scale(0.92);
+    box-shadow: 0 0 25px #ff3333, inset 0 0 15px #330000;
+}
+
+#tab-tap-to-earn p {
+    font-size: 1em;
+    color: #ffddaa;
+    text-shadow: 1px 1px 2px #000;
+}
+
+#tap-energy, #tap-max-energy, #tap-gain {
     font-weight: bold;
-    transition: background 0.3s, color 0.3s, transform 0.1s;
-    white-space: normal; line-height: 1.2;
-    min-height: 48px; /* Aumentado para mejor tacto */
-    display: flex; align-items: center; justify-content: center;
-    text-transform: uppercase; /* Estilo más de "juego" */
-}
-.nav-button:last-child { border-right: none; }
-.nav-button.active {
-    background: linear-gradient(to top, #ff0000, #cc0000);
-    color: #fff;
-    text-shadow: 0 0 5px #fff;
-}
-.nav-button:hover:not(.active) {
-    background: linear-gradient(to bottom, #333, #1a1a1a);
-    color: #fff;
-}
-.nav-button:active:not(.active) {
-    transform: scale(0.95);
+    color: #ffcc88;
 }
 
-
-.action-button {
-    /* ... (estilos de .action-button, mejorados) ... */
-    background: linear-gradient(to bottom, #7d0000, #4c0000); /* Rojo más oscuro y saturado */
-    color: #f0f0f0;
-    border: 1px solid #3b0000;
-    box-shadow: 0 4px 0 #2c0000, 0 5px 5px rgba(0,0,0,0.5); /* Efecto 3D */
-    padding: 12px 18px; /* Más padding */
-    text-shadow: 1px 1px 1px #000000a0;
-    transition: background 0.1s, transform 0.1s, box-shadow 0.1s;
-}
-.action-button:hover:not(:disabled) {
-    background: linear-gradient(to bottom, #9c0000, #6b0000);
-}
-.action-button:active:not(:disabled) {
-    background: linear-gradient(to top, #7d0000, #4c0000);
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 #2c0000, 0 3px 3px rgba(0,0,0,0.6); /* Ajustar sombra al presionar */
-}
-.wallet-button { /* Estilo específico para botones de billetera */
-    padding: 5px 10px !important;
-    font-size: 0.75em !important;
-    margin-top: 0 !important;
-    background: linear-gradient(to bottom, #007bff, #0056b3); /* Azul para billetera */
-    border-color: #004085;
-    box-shadow: 0 3px 0 #003063, 0 4px 4px rgba(0,0,0,0.4);
-}
-.wallet-button:hover:not(:disabled) { background: linear-gradient(to bottom, #008cff, #0069cc); }
-.wallet-button:active:not(:disabled) {
-    background: linear-gradient(to top, #007bff, #0056b3);
-    transform: translateY(1px);
-    box-shadow: 0 1px 0 #003063, 0 2px 2px rgba(0,0,0,0.5);
+#tap-feedback-container {
+    position: relative; /* Para posicionar números flotantes */
+    height: 30px; /* Espacio para los números */
+    width: 100px;
+    margin-top: 10px;
 }
 
-
-#spin-button.spin-action {
-    /* ... (estilos de #spin-button.spin-action, pueden heredar mucho de .action-button) ... */
-    background: linear-gradient(to bottom, #009000, #006000); /* Verde más vibrante */
-    border-color: #004000;
-    box-shadow: 0 4px 0 #003000, 0 5px 5px rgba(0,0,0,0.5);
-}
-#spin-button.spin-action:hover:not(:disabled) {
-    background: linear-gradient(to bottom, #00a000, #007000);
-}
-#spin-button.spin-action:active:not(:disabled) {
-    background: linear-gradient(to top, #009000, #006000);
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 #003000, 0 3px 3px rgba(0,0,0,0.6);
-}
-.spin-button-cooldown { /* Mantenemos esta clase */
-    background: linear-gradient(to bottom, #5c635c, #3e403e) !important;
-    color: #999 !important; border-color: #2b2e2b !important;
-    cursor: not-allowed !important;
-    animation: subtleCooldownPulse 1.5s infinite ease-in-out;
-    transform: translateY(0) !important; box-shadow: none !important;
-}
-@keyframes subtleCooldownPulse { /* Sin cambios */
-    0% { border-color: #2b2e2b; } 50% { border-color: #666; } 100% { border-color: #2b2e2b; }
-}
-
-
-/* Slot Machine Area y Mensajes */
-.slot-machine-area {
-    /* ... (neonFlicker y partículas sin cambios) ... */
-    box-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff, inset 0 0 20px #101010;
-}
-@keyframes neonFlicker { /* Sin cambios */
-    0%, 100% { box-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff4500aa, inset 0 0 20px #101010;}
-    50% { box-shadow: 0 0 15px #ff4500aa, 0 0 25px #ff4500aa, 0 0 35px #ff00ff, 0 0 45px #ff00ff, inset 0 0 20px #101010;}
-}
-/* Partículas y otros efectos de ambiente se mantienen como estaban */
-
-
-#spin-result-message-container {
-    margin-top: 20px; /* Más espacio */
-    min-height: 3.5em;
-    color: #ffdd44; /* Amarillo más brillante */
-    font-size: 1.2em; /* Un poco más grande */
-    font-weight: bold;
-    text-shadow: 0 0 5px #000; /* Sombra para destacar */
-}
-#spin-result-text { opacity: 0; }
-#spin-winnings-line { display: none; /* Se mostrará por JS */}
-#spin-winnings-amount { color: #00ff00; /* Verde brillante para ganancias */}
-
-/* ... (resto de CSS incluyendo .particle, coin-burst etc. se mantiene como estaba antes,
-    asegúrate que las media queries también están al final) ... */
+.tap-feedback-number {
+    position: absolute;
+    left:
