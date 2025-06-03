@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crypto Casino 666: Hell's High Rollers</title>
-    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,15 +12,15 @@
             <div id="player-profile">
                 <span id="player-name">HellRoller</span>
                 <div id="wallet-info">
-                    <span id="wallet-status">Desconectado</span>
+                    <span id="wallet-status" data-tooltip="Estado de la Billetera TON (Simulado)">Desconectado</span>
                     <button id="connect-wallet-header" class="action-button wallet-button">Conectar TON</button>
                 </div>
-                <span id="wallet-address-display" class="tooltip"></span>
+                <span id="wallet-address-display" class="tooltip" data-tooltip="Tu dirección de Billetera TON (Simulada)"></span>
             </div>
             <div id="currency-display">
                 <span id="cc6-token-balance" class="tooltip" data-tooltip="Tokens del Juego">CC6T: 0</span>
                 <span id="cc6-gold-balance" class="tooltip" data-tooltip="Oro del Juego">CC6G: 0</span>
-                <span id="wallet-ton-balance-display" class="tooltip" data-tooltip="TON en Billetera">TON: 0.00</span>
+                <span id="wallet-cc6-token-simulated-balance" class="tooltip" data-tooltip="CC6T en Billetera (Simulado)">W_CC6T: 0</span>
             </div>
         </header>
 
@@ -29,33 +28,4 @@
             <div id="tab-ascension" class="tab-content">
                 <h2>ASCENSIÓN</h2>
                 <p class="tab-description">Mejora tu Alter Ego Infernal con CC6 GOLD.</p>
-                <div class="character-upgrade-area">
-                    <h3>Tu Alter Ego</h3>
-                    <p>Nivel: <span id="alter-ego-level">1</span></p>
-                    <button class="action-button">Mejorar "Suerte"</button>
-                    <button class="action-button">Mejorar "Influencia"</button>
-                    <button id="send-to-moon" class="action-button special-action">Enviar a la Luna</button>
-                    
-                    <h4>Comprar CC6 GOLD</h4>
-                    <p>1000 CC6G por 0.05 TON</p>
-                    <button id="buy-gold-button" class="action-button special-action">Comprar con TON</button>
-                </div>
-            </div>
-            <div id="tab-la-caida" class="tab-content">
-                 <button id="connect-wallet-drop" class="action-button wallet-button">Conectar Billetera TON</button>
-            </div>
-
-            <div id="tab-ruleta-hades" class="tab-content active">
-                </div>
-            <div id="tab-hermandad" class="tab-content">
-                </div>
-            <div id="tab-contratos" class="tab-content">
-                </div>
-        </main>
-
-        <nav id="bottom-nav">
-             </nav>
-    </div>
-    <script src="script.js"></script>
-</body>
-</html>
+                <div class="character
