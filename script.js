@@ -1,291 +1,237 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Selectores del DOM (agrupados para claridad) ---
-    const gameContainer = document.getElementById('game-container');
-    const playerNameDisplay = document.getElementById('player-name');
+    // --- Selectores del DOM ---
+    const petTokensBalanceDisplay = document.getElementById('pet-tokens-balance');
+    const connectWalletBtn = document.getElementById('connect-wallet-btn');
+    const walletInfoDisplay = document.getElementById('wallet-info');
+    const walletAddressDisplay = document.getElementById('wallet-address');
+    const walletNetworkDisplay = document.getElementById('wallet-network');
 
-    // Wallet UI
-    const connectWalletButton = document.getElementById('connect-wallet-button');
-    const walletStatusDisplay = document.getElementById('wallet-status');
-    const walletAddressDisplay = document.getElementById('wallet-address-display');
-    const walletSimulatedCc6TokenBalanceDisplay = document.getElementById('wallet-cc6-token-simulated-balance');
-    const buyGoldButton = document.getElementById('buy-gold-button');
+    const petImageContainer = document.getElementById('pet-image-container');
+    const petEvolutionLevelDisplay = document.getElementById('pet-evolution-level');
+    // const petImage = document.getElementById('pet-image'); // Si usas <img> para la mascota
 
-    // Currency UI
-    const cc6TokenBalanceDisplay = document.getElementById('cc6-token-balance');
-    const cc6GoldBalanceDisplay = document.getElementById('cc6-gold-balance');
+    const energyFill = document.getElementById('energy-fill');
+    const energyValueDisplay = document.getElementById('energy-value');
+    const energyMaxDisplay = document.getElementById('energy-max');
 
-    // Tabs & Navigation
-    const navButtons = document.querySelectorAll('.nav-button');
-    const tabContents = document.querySelectorAll('.tab-content');
+    const evolveButton = document.getElementById('evolve-button');
+    const evolutionCostDisplay = document.getElementById('evolution-cost');
+    const messagesDisplay = document.getElementById('messages');
 
-    // Ruleta (Slot Machine) UI
-    const spinButton = document.getElementById('spin-button');
-    const reels = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
-    const spinResultMessageContainer = document.getElementById('spin-result-message-container');
-    const spinResultTextElement = document.getElementById('spin-result-text');
-    const spinWinningsAmountElement = document.getElementById('spin-winnings-amount');
-    const spinWinningsLineElement = document.getElementById('spin-winnings-line');
-    const coinBurstContainer = document.getElementById('coin-burst-container');
-    const spinCountDisplay = document.getElementById('spin-count');
-    const multiplierSelect = document.getElementById('multiplier-select');
+    const tonConnectModal = document.getElementById('ton-connect-modal');
+    const closeModalButton = document.querySelector('#ton-connect-modal .close-button');
+    const walletOptionBtns = document.querySelectorAll('#ton-connect-modal .wallet-option-btn');
+    const modalMessage = document.getElementById('modal-message');
 
-    // Tap to Earn UI
-    const tappableRune = document.getElementById('tappable-rune');
-    const tapEnergyDisplay = document.getElementById('tap-energy');
-    const tapMaxEnergyDisplay = document.getElementById('tap-max-energy');
-    const tapGainDisplay = document.getElementById('tap-gain');
-    const tapFeedbackContainer = document.getElementById('tap-feedback-container');
-    
-    // Otros
-    const claimTokensButton = document.getElementById('claim-tokens'); // Para Drop Tab
-    const sendToMoonButton = document.getElementById('send-to-moon'); // Para Ascensión Tab
+    // --- Estado del Juego ---
+    let petTokens = 0;
+    let evolutionLevel = 0;
+    let evolutionBaseCost = 10;
+    let currentEvolutionCost = 10;
 
+    let currentEnergy = 100;
+    const maxEnergy = 100;
+    const tapValue = 1; // PetTokens ganados por toque
+    const energyCostPerTap = 5; // Energía gastada por toque
+    const energyRechargeRate = 1; // Energía recuperada por segundo
+    const energyRechargeInterval = 1000; // 1 segundo
 
-    // --- ESTADO DEL JUEGO Y BILLETERA (SIMULADO) ---
-    let cc6Token = 1000;
-    let cc6Gold = 50;
-    let currentSpins = 100;
-    let alterEgoLevel = 1;
-    let dropBankTotal = 0;
-    const dropRatePerHour = 3600; // 1 token por segundo para demo
-
+    // --- Estado de Billetera TON (Simulado) ---
     let isWalletConnected_simulated = false;
-    let simulatedWalletAddress = "";
-    let simulatedWalletCc6Token = 0;
+    let simulatedTonAddress = "";
+    let simulatedTonNetwork = "";
 
-    let currentTapEnergy = 100;
-    const maxTapEnergy = 100;
-    const tapGainAmount = 1;
-    const energyRechargeRate = 1;
-    const energyRechargeInterval = 1000; // ms
+    // --- INICIALIZACIÓN DEL JUEGO ---
+    function initGame() {
+        updateDisplays();
+        loadSimulatedWalletState(); // Cargar estado de billetera guardado
+        setInterval(rechargeEnergy, energyRechargeInterval);
 
-    const GAME_PAYMENT_ADDRESS_TON = "UQCdA1_m4iiU6jKUaBMsvIoWfMLUzaRfggNg0sabGK-eV-SV";
-
-    // --- FUNCIONES DE INICIALIZACIÓN Y ACTUALIZACIÓN DE UI ---
-    function updateAllDisplays() {
-        cc6TokenBalanceDisplay.textContent = `CC6T: ${Math.floor(cc6Token)}`;
-        cc6GoldBalanceDisplay.textContent = `CC6G: ${Math.floor(cc6Gold)}`;
-        walletSimulatedCc6TokenBalanceDisplay.textContent = `W_CC6T: ${Math.floor(simulatedWalletCc6Token)}`;
-        
-        document.getElementById('alter-ego-level').textContent = alterEgoLevel;
-        document.getElementById('drop-bank-total').textContent = Math.floor(dropBankTotal);
-        document.getElementById('drop-rate').textContent = dropRatePerHour;
-        spinCountDisplay.textContent = Math.floor(currentSpins);
-        
-        updateTapToEarnUI();
-        updateWalletStatusUI_simulated();
+        // Activar pestaña por defecto (si tuvieras varias)
+        // Por ahora, es una sola pantalla principal
+        console.log("Crypto Pets - Tap & Evolve: Inicializado!");
     }
 
-    function updateTapToEarnUI() {
-        if (tapEnergyDisplay && tapMaxEnergyDisplay && tapGainDisplay) {
-            tapEnergyDisplay.textContent = currentTapEnergy;
-            tapMaxEnergyDisplay.textContent = maxTapEnergy;
-            tapGainDisplay.textContent = tapGainAmount;
-        }
-    }
+    // --- FUNCIONES DE ACTUALIZACIÓN DE UI ---
+    function updateDisplays() {
+        petTokensBalanceDisplay.textContent = Math.floor(petTokens);
+        petEvolutionLevelDisplay.textContent = evolutionLevel;
+        evolutionCostDisplay.textContent = Math.floor(currentEvolutionCost);
+        energyValueDisplay.textContent = Math.floor(currentEnergy);
+        energyMaxDisplay.textContent = maxEnergy;
+        energyFill.style.width = `${(currentEnergy / maxEnergy) * 100}%`;
 
-    function updateWalletStatusUI_simulated() {
-        if (isWalletConnected_simulated) {
-            walletStatusDisplay.textContent = "Conectado";
-            walletStatusDisplay.className = "connected";
-            if (connectWalletButton) connectWalletButton.textContent = "Desconectar TON";
-            const shortAddr = simulatedWalletAddress.substring(0, 9) + "..." + simulatedWalletAddress.substring(simulatedWalletAddress.length - 4);
-            walletAddressDisplay.textContent = shortAddr;
-            walletAddressDisplay.setAttribute('data-tooltip', `Billetera: ${simulatedWalletAddress}`);
-            walletSimulatedCc6TokenBalanceDisplay.style.display = 'inline-block';
+        // Actualizar imagen de mascota basada en evolutionLevel (aquí pondrías tu lógica de imágenes)
+        // Por ejemplo: petImage.src = `pets/pet_level_${evolutionLevel}.png`;
+        // O cambiar el contenido del placeholder:
+        const petPlaceholders = ['🐾', '🐶', '🐱', '🦊', '🐻', '🐼', '🦁', '🦄', '🐲', '🌟'];
+        document.getElementById('pet-placeholder').textContent = petPlaceholders[evolutionLevel % petPlaceholders.length];
+
+
+        if (petTokens < currentEvolutionCost) {
+            evolveButton.disabled = true;
         } else {
-            walletStatusDisplay.textContent = "Desconectado";
-            walletStatusDisplay.className = "disconnected";
-            if (connectWalletButton) connectWalletButton.textContent = "Conectar TON";
-            walletAddressDisplay.textContent = "";
-            walletAddressDisplay.setAttribute('data-tooltip', 'Billetera no conectada');
-            walletSimulatedCc6TokenBalanceDisplay.style.display = 'none';
+            evolveButton.disabled = false;
         }
     }
-    
-    // --- LÓGICA DE BILLETERA (SIMULADA) ---
-    function loadSimulatedWalletState() {
-        const savedStatus = localStorage.getItem('cc666_wallet_connected_sim_v2'); // Nueva key para evitar conflictos
-        if (savedStatus === 'true') {
-            isWalletConnected_simulated = true;
-            simulatedWalletAddress = localStorage.getItem('cc666_wallet_address_sim_v2') || generateFakeAddress();
-            simulatedWalletCc6Token = parseInt(localStorage.getItem('cc666_wallet_tokens_sim_v2') || '0');
-        } else {
-            isWalletConnected_simulated = false;
-        }
-        updateAllDisplays(); // Llama a la función que actualiza todo
+
+    function showMessage(text, type = "info") { // type puede ser "info", "error", "success"
+        messagesDisplay.textContent = text;
+        messagesDisplay.className = type; // Para aplicar estilos diferentes si quieres
+        setTimeout(() => {
+            messagesDisplay.textContent = "";
+            messagesDisplay.className = "";
+        }, 3000);
     }
 
-    function generateFakeAddress() {
-        return "SIM_TON_0x" + Array(30).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+    function showTapFeedback(value) {
+        const feedback = document.createElement('div');
+        feedback.classList.add('tap-value-feedback');
+        feedback.textContent = `+${value}`;
+        petImageContainer.appendChild(feedback); // Añadir al contenedor de la mascota
+        setTimeout(() => {
+            feedback.remove();
+        }, 750); // Duración de la animación CSS
     }
 
-    function handleConnectSimulatedWallet() {
-        if (isWalletConnected_simulated) { // Desconectar
-            isWalletConnected_simulated = false;
-            simulatedWalletAddress = "";
-            simulatedWalletCc6Token = 0;
-            localStorage.setItem('cc666_wallet_connected_sim_v2', 'false');
-            localStorage.removeItem('cc666_wallet_address_sim_v2');
-            localStorage.removeItem('cc666_wallet_tokens_sim_v2');
-            alert("Billetera TON (Simulada) Desconectada.");
-        } else { // Conectar
-            isWalletConnected_simulated = true;
-            simulatedWalletAddress = generateFakeAddress();
-            simulatedWalletCc6Token = Math.floor(Math.random() * 5000) + 1000;
-            localStorage.setItem('cc666_wallet_connected_sim_v2', 'true');
-            localStorage.setItem('cc666_wallet_address_sim_v2', simulatedWalletAddress);
-            localStorage.setItem('cc666_wallet_tokens_sim_v2', simulatedWalletCc6Token.toString());
-            alert(`Billetera TON (Simulada) Conectada:\n${simulatedWalletAddress}\nSaldo CC6T en Billetera (Simulado): ${simulatedWalletCc6Token}`);
-        }
-        updateAllDisplays();
-    }
-
-    if (connectWalletButton) {
-        connectWalletButton.addEventListener('click', handleConnectSimulatedWallet);
-    }
-    
-    // --- LÓGICA DE PAGO (SIMULADO) ---
-    if (buyGoldButton) {
-        buyGoldButton.addEventListener('click', () => {
-            if (!isWalletConnected_simulated) {
-                alert("Por favor, conecta tu billetera TON (simulada) primero para comprar CC6 Gold.");
-                return;
-            }
-            const costTON = 0.05;
-            const goldAmount = 1000;
-            // Simulación: Preguntar al usuario si quiere "gastar" de su saldo simulado de billetera
-            // En una implementación real, esto invocaría al SDK de la billetera para una transacción real.
-            if (confirm(`Simular envío de ${costTON} TON desde tu billetera a ${GAME_PAYMENT_ADDRESS_TON.substring(0,12)}... para ${goldAmount} CC6G?`)) {
-                // Aquí, en una implementación real, llamarías a tonConnectUI.sendTransaction(...)
-                // y esperarías el resultado.
-                alert(`Pago simulado de ${costTON} TON realizado.\n(NOTA: Esto es solo una simulación, no se han transferido fondos reales.)`);
-                cc6Gold += goldAmount;
-                updateAllDisplays();
-                // Mostrar algún feedback de éxito
-                typeWriterEffect(spinResultTextElement, `¡${goldAmount} CC6G comprados!`, 50);
-                spinWinningsLineElement.style.display = 'none';
-                spinResultMessageContainer.style.opacity = 1;
+    // --- LÓGICA DE "TAP TO EARN" ---
+    if (petImageContainer) {
+        petImageContainer.addEventListener('click', () => {
+            if (currentEnergy >= energyCostPerTap) {
+                currentEnergy -= energyCostPerTap;
+                petTokens += tapValue;
+                showTapFeedback(tapValue);
+                updateDisplays();
+                // Podrías añadir una animación al tocar la mascota aquí
             } else {
-                alert("Compra cancelada.");
+                showMessage("¡Sin energía!", "error");
             }
         });
     }
 
-    // --- ANIMACIONES DE TEXTO, NÚMEROS, MONEDAS (como estaban) ---
-    function typeWriterEffect(element, text, speed = 50, callback) {
-        if (!element) return;
-        element.textContent = ""; element.style.opacity = 1; let i = 0;
-        function type() { if (i < text.length) { element.textContent += text.charAt(i); i++; setTimeout(type, speed); } else if (callback) { callback(); }} type();
-    }
-    function countUpNumber(element, targetAmount, duration = 1000) {
-        if (!element) return;
-        let currentAmount = 0; const frameDuration = 1000 / 60; const totalFrames = Math.round(duration / frameDuration);
-        const increment = targetAmount === 0 ? 0 : targetAmount / totalFrames;
-        if (targetAmount === 0 && element) { element.textContent = "0"; return; }
-        let currentFrame = 0; const timer = setInterval(() => { currentFrame++; currentAmount += increment;
-        if (currentFrame >= totalFrames) { currentAmount = targetAmount; clearInterval(timer); }
-        if (element) element.textContent = Math.floor(currentAmount); }, frameDuration);
-    }
-    function createCoinBurst(count = 10, isJackpot = false) {
-        if (!coinBurstContainer) return;
-        coinBurstContainer.innerHTML = ''; if (!isJackpot && count < 15) return;
-        const numCoins = isJackpot ? count * 2 : count;
-        for (let i = 0; i < numCoins; i++) { const particle = document.createElement('div'); particle.classList.add('coin-burst-particle');
-        particle.style.left = `${40 + Math.random() * 20}%`; particle.style.bottom = `${Math.random() * 20}%`;
-        const randomX = (Math.random() - 0.5) * (isJackpot ? 150 : 100);
-        particle.style.setProperty('--tx', `${randomX}px`); const animDuration = 0.6 + Math.random() * 0.6;
-        const animDelay = Math.random() * 0.3; particle.style.animation = `coinBurstAnimation ${animDuration}s ${animDelay}s forwards ease-out`;
-        particle.style.transform = `translateY(0) scale(${0.7 + Math.random() * 0.6})`; coinBurstContainer.appendChild(particle);
-        setTimeout(() => particle.remove(), (animDuration + animDelay) * 1000 + 100); }
+    function rechargeEnergy() {
+        if (currentEnergy < maxEnergy) {
+            currentEnergy = Math.min(maxEnergy, currentEnergy + energyRechargeRate);
+            updateDisplays();
+        }
     }
 
-    // --- LÓGICA DE LA TRAGAMONEDAS ---
-    const slotSymbols = ['💀', '😈', '666', '🔥', '👁️', '💰', 'BAR'];
-    function getRandomSymbol() { return slotSymbols[Math.floor(Math.random() * slotSymbols.length)]; }
+    // --- LÓGICA DE EVOLUCIÓN ---
+    if (evolveButton) {
+        evolveButton.addEventListener('click', () => {
+            if (petTokens >= currentEvolutionCost) {
+                petTokens -= currentEvolutionCost;
+                evolutionLevel++;
+                // El costo aumenta un 20% para la siguiente evolución
+                currentEvolutionCost *= 1.20; 
+                // currentEvolutionCost = Math.ceil(currentEvolutionCost); // Redondear hacia arriba si quieres enteros
 
-    if (spinButton) {
-        const originalSpinButtonText = spinButton.textContent;
-        spinButton.addEventListener('click', () => {
-            if (spinButton.disabled) return;
-
-            spinButton.classList.add('spin-button-cooldown');
-            spinButton.disabled = true;
-            spinButton.textContent = "GIRANDO...";
-
-            if (spinResultMessageContainer) spinResultMessageContainer.style.opacity = 0;
-            if (spinResultTextElement) spinResultTextElement.textContent = "";
-            if (spinWinningsLineElement) spinWinningsLineElement.style.display = 'none';
-            if (spinWinningsAmountElement) spinWinningsAmountElement.textContent = "0";
-            
-            const selectedMultiplier = parseInt(multiplierSelect.value);
-
-            if (currentSpins <= 0) {
-                if (spinResultMessageContainer) spinResultMessageContainer.style.opacity = 1;
-                typeWriterEffect(spinResultTextElement, "¡No tienes giros!", 30);
-                spinButton.classList.remove('spin-button-cooldown');
-                spinButton.disabled = false;
-                spinButton.textContent = originalSpinButtonText;
-                return;
+                showMessage(`¡Mascota evolucionada al Nivel ${evolutionLevel}!`, "success");
+                updateDisplays();
+                // Aquí podrías cambiar la imagen de la mascota
+                // petImage.src = `path_to_new_evolution_image_${evolutionLevel}.png`;
+            } else {
+                showMessage("¡No tienes suficientes PetTokens para evolucionar!", "error");
             }
-            if(spinWinningsLineElement) spinWinningsLineElement.style.display = 'block';
+        });
+    }
 
-            currentSpins--;
-            if(spinCountDisplay) spinCountDisplay.textContent = Math.floor(currentSpins);
+    // --- LÓGICA DE BILLETERA TON (SIMULADA) ---
+    function updateSimulatedWalletUI() {
+        if (isWalletConnected_simulated) {
+            walletInfoDisplay.style.display = 'block';
+            walletAddressDisplay.textContent = simulatedTonAddress.substring(0, 6) + "..." + simulatedTonAddress.substring(simulatedTonAddress.length - 4);
+            walletNetworkDisplay.textContent = `(${simulatedTonNetwork})`;
+            connectWalletBtn.textContent = "Desconectar";
+            // Aquí, en una implementación real, obtendrías y mostrarías el saldo real de TON
+        } else {
+            walletInfoDisplay.style.display = 'none';
+            walletAddressDisplay.textContent = "";
+            walletNetworkDisplay.textContent = "";
+            connectWalletBtn.textContent = "Conectar Billetera TON";
+        }
+    }
 
-            reels.forEach(reel => {
-                if (!reel) return;
-                let i = 0;
-                const maxFrames = 10 + Math.floor(Math.random() * 10);
-                const intervalId = setInterval(() => {
-                    reel.textContent = getRandomSymbol();
-                    i++;
-                    if (i >= maxFrames) {
-                        clearInterval(intervalId);
-                        // La asignación final se hará en el setTimeout principal
-                    }
-                }, 70 + Math.random() * 30); // Velocidad de giro variable
-            });
+    function loadSimulatedWalletState() {
+        const connected = localStorage.getItem('ton_wallet_sim_connected') === 'true';
+        if (connected) {
+            isWalletConnected_simulated = true;
+            simulatedTonAddress = localStorage.getItem('ton_wallet_sim_address') || generateFakeSimulatedAddress();
+            simulatedTonNetwork = localStorage.getItem('ton_wallet_sim_network') || "Testnet (Sim.)";
+        }
+        updateSimulatedWalletUI();
+    }
+
+    function saveSimulatedWalletState() {
+        localStorage.setItem('ton_wallet_sim_connected', isWalletConnected_simulated);
+        if (isWalletConnected_simulated) {
+            localStorage.setItem('ton_wallet_sim_address', simulatedTonAddress);
+            localStorage.setItem('ton_wallet_sim_network', simulatedTonNetwork);
+        } else {
+            localStorage.removeItem('ton_wallet_sim_address');
+            localStorage.removeItem('ton_wallet_sim_network');
+        }
+    }
+    
+    function generateFakeSimulatedAddress() {
+        return "EQ_SIM_" + Array(40).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+    }
+
+    if (connectWalletBtn) {
+        connectWalletBtn.addEventListener('click', () => {
+            if (isWalletConnected_simulated) {
+                // Simular desconexión
+                isWalletConnected_simulated = false;
+                showMessage("Billetera TON (Simulada) Desconectada", "info");
+            } else {
+                // Mostrar modal de conexión simulado
+                tonConnectModal.style.display = 'flex';
+                modalMessage.textContent = ""; // Limpiar mensajes anteriores del modal
+            }
+            saveSimulatedWalletState();
+            updateSimulatedWalletUI();
+        });
+    }
+
+    if (closeModalButton) {
+        closeModalButton.addEventListener('click', () => {
+            tonConnectModal.style.display = 'none';
+        });
+    }
+
+    walletOptionBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Simular conexión exitosa con la billetera seleccionada
+            isWalletConnected_simulated = true;
+            simulatedTonAddress = generateFakeSimulatedAddress(); // Nueva dirección simulada
+            simulatedTonNetwork = btn.dataset.walletName.includes("Tonkeeper") ? "Mainnet (Sim.)" : "Testnet (Sim.)";
+            
+            modalMessage.textContent = `Conectado a ${btn.dataset.walletName}!`;
+            modalMessage.style.color = "green";
+
+            saveSimulatedWalletState();
+            updateSimulatedWalletUI();
 
             setTimeout(() => {
-                const finalResult = [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
-                reels.forEach((reel, index) => {
-                    if (reel) reel.textContent = finalResult[index];
-                });
+                tonConnectModal.style.display = 'none';
+            }, 1500); // Cerrar modal después de un momento
+            
+            // Aquí es donde, en una implementación real, recibirías `ConnectEventSuccess`
+            // y manejarías el `payload` con `items` (como `TonAddressItemReply`), `device`, etc.
+            // Basado en la documentación que proporcionaste, harías algo como:
+            // const connectEventPayload = { items: [{ name: "ton_addr", address: simulatedTonAddress, network: "-3", publicKey: "...", walletStateInit: "..."}], device: { ... } };
+            // handleConnectEvent(connectEventPayload);
+            showMessage(`Billetera ${btn.dataset.walletName} conectada (Simulación).`, "success");
+        });
+    });
 
-                let messageText = "";
-                let winnings = 0;
-                let isJackpot = false;
+    // Cierra el modal si se hace clic fuera del contenido
+    window.onclick = function(event) {
+        if (event.target == tonConnectModal) {
+            tonConnectModal.style.display = "none";
+        }
+    }
 
-                if (finalResult[0] === '💰' && finalResult[1] === '💰' && finalResult[2] === '💰') {
-                    winnings = 250 * selectedMultiplier; messageText = "¡¡MEGA JACKPOT!!"; isJackpot = true;
-                } else if (finalResult[0] === finalResult[1] && finalResult[1] === finalResult[2]) {
-                    winnings = 100 * selectedMultiplier; messageText = "¡JACKPOT!"; isJackpot = true;
-                } else if (finalResult[0] === '666' && finalResult[1] === '666' && finalResult[2] === '666') {
-                    winnings = 66 * selectedMultiplier; messageText = "¡Número Bestial!"; isJackpot = true;
-                } else if ((finalResult[0] === finalResult[1]) || (finalResult[0] === finalResult[2]) || (finalResult[1] === finalResult[2])) {
-                    winnings = 20 * selectedMultiplier; messageText = "¡Doble!";
-                } else if (finalResult.includes('💰')) {
-                    winnings = 5 * selectedMultiplier; messageText = "¡Monedas!";
-                } else {
-                    messageText = "¡Sigue Intentando!";
-                }
-                
-                cc6Token += winnings;
-                updateAllDisplays();
-
-                if (spinResultMessageContainer) spinResultMessageContainer.style.opacity = 1;
-                typeWriterEffect(spinResultTextElement, messageText, 70, () => {
-                    if (winnings > 0) {
-                        if(spinWinningsLineElement) spinWinningsLineElement.style.display = 'block';
-                        countUpNumber(spinWinningsAmountElement, winnings, Math.min(winnings * 10, 1500));
-                        createCoinBurst(Math.min(10 + Math.floor(winnings / (5 * selectedMultiplier)), 50), isJackpot);
-                    } else {
-                        if(spinWinningsLineElement) spinWinningsLineElement.style.display = 'none';
-                    }
-                });
-
-                spinButton.classList.remove('spin-button-cooldown');
-                spinButton.disabled = false;
-                spinButton.textContent = originalSpinButtonText;
-            }, 1500 + Math.random()*500);
+    // --- Inicializar Juego ---
+    initGame();
+});
