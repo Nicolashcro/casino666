@@ -12,16 +12,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const telegramUserInfoDiv = document.getElementById('telegram-user-info');
 
     // Referencias a los SDKs globales
-    const WebApp = window.Telegram.WebApp;
-    const TONConnectSDK = window.TONConnectSDK; // Se asigna si el script del SDK se carga
+    // Es importante verificar que estos scripts se carguen ANTES que este script.js
+    const WebApp = window.Telegram ? window.Telegram.WebApp : undefined;
+    const TONConnectSDK_GLOBAL = window.TONConnectSDK; // Usar un nombre diferente para la asignación inicial
+
+    console.log("Estado inicial de window.Telegram.WebApp:", WebApp);
+    console.log("Estado inicial de window.TONConnectSDK:", TONConnectSDK_GLOBAL);
+
 
     // --- 1. Inicialización del SDK de Telegram ---
     if (WebApp && WebApp.initData) {
-        console.log("SDK de Telegram WebApp detectado.");
-        WebApp.ready(); // Informa a Telegram que la app está lista
-        WebApp.expand(); // Expande la Mini App a altura completa
+        console.log("SDK de Telegram WebApp detectado y listo.");
+        WebApp.ready(); 
+        WebApp.expand(); 
 
-        // Mostrar información del usuario de Telegram (opcional)
         if (WebApp.initDataUnsafe && WebApp.initDataUnsafe.user && telegramUserInfoDiv) {
             const user = WebApp.initDataUnsafe.user;
             telegramUserInfoDiv.innerHTML = `
@@ -29,55 +33,47 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <br>ID: ${user.id} | Lenguaje: ${user.language_code}
             `;
         }
-         // Aplicar tema de Telegram (opcional)
         document.body.style.backgroundColor = WebApp.themeParams.bg_color || '#ffffff';
         document.body.style.color = WebApp.themeParams.text_color || '#000000';
-        // Puedes aplicar más estilos a elementos específicos si quieres
-        // WebApp.MainButton.setText('Botón Principal').show().onClick(() => WebApp.close());
-
     } else {
-        console.error("SDK de Telegram WebApp NO detectado. Asegúrate de que telegram-web-app.js esté cargado y que la app se ejecute dentro de Telegram.");
-        showUIMessage("Error: Esta app debe ejecutarse dentro de Telegram.", "error");
-        // Podrías deshabilitar funcionalidad si no está en Telegram.
+        console.error("SDK de Telegram WebApp NO detectado o no inicializado correctamente. Asegúrate de que telegram-web-app.js esté cargado ANTES que este script y que la app se ejecute dentro de Telegram.");
+        showUIMessage("Error: Esta app debe ejecutarse dentro de Telegram.", "error", 10000);
         if (connectTonWalletBtn) connectTonWalletBtn.disabled = true;
         if (sendTonTransactionBtn) sendTonTransactionBtn.disabled = true;
-        return; // Detener si no estamos en entorno TMA
+        return; 
     }
 
     // --- 2. Configuración de TON Connect ---
-    if (typeof TONConnectSDK === 'undefined') {
-        console.error("¡ERROR CRÍTICO: TONConnectSDK no está definido! Asegúrate de que el script del SDK de TON Connect se haya cargado ANTES que este script (script.js) en tu HTML y que la URL sea correcta.");
-        showUIMessage("Error: No se pudo cargar el SDK de TON Connect. Revisa la consola (F12) -> Network.", "error", 10000);
+    if (typeof TONConnectSDK_GLOBAL === 'undefined') {
+        console.error("¡ERROR CRÍTICO: TONConnectSDK_GLOBAL (window.TONConnectSDK) no está definido! El script <script src='https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js'></script> NO se cargó correctamente o se cargó DESPUÉS de script.js. Revisa la pestaña 'Network' en las herramientas de desarrollador (F12).");
+        showUIMessage("Error: No se pudo cargar el SDK de TON Connect. Revisa la consola (F12) -> Network para ver si 'tonconnect-sdk.min.js' se está cargando con estado 200.", "error", 20000);
         if (connectTonWalletBtn) connectTonWalletBtn.disabled = true;
-        return; // Detener la ejecución si el SDK de TON no está
+        return; 
     }
 
-    const { TonConnectUI } = TONConnectSDK;
-    const manifestUrl = 'https://nicolashcro.github.io/casino666/tonconnect-manifest.json'; // ¡USA TU URL CORRECTA!
+    const { TonConnectUI } = TONConnectSDK_GLOBAL; // Ahora usamos la variable que verificamos
+    // Asegúrate que esta URL sea correcta y que el archivo JSON exista y sea accesible públicamente
+    const manifestUrl = 'https://nicolashcro.github.io/casino666/tonconnect-manifest.json'; 
     console.log("Usando manifestUrl para TON Connect:", manifestUrl);
 
     let tonConnectUI;
     try {
         tonConnectUI = new TonConnectUI({
             manifestUrl: manifestUrl,
-            // Opcional: si quieres que el SDK renderice su propio botón de conexión
-            // buttonRootId: 'id-del-div-donde-quieres-el-boton-sdk' 
         });
         console.log("TonConnectUI inicializado:", tonConnectUI);
     } catch (error) {
-        console.error("Error al inicializar TonConnectUI:", error);
+        console.error("Error al inicializar TonConnectUI. ¿Es la manifestUrl correcta y accesible ('" + manifestUrl + "')? ¿El JSON del manifiesto es válido?", error);
         showUIMessage("Error al init TON Connect. ¿Manifest URL correcta y accesible? ¿JSON válido?", "error", 10000);
         return;
     }
 
-    // Tu dirección de billetera TON para recibir pagos
-    const YOUR_TON_RECEIVING_ADDRESS = "UQCdA1_m4iiU6jKUaBMsvIoWfMLUzaRfggNg0sabGK-eV-SV"; // Reemplaza con tu dirección
+    const YOUR_TON_RECEIVING_ADDRESS = "UQCdA1_m4iiU6jKUaBMsvIoWfMLUzaRfggNg0sabGK-eV-SV";
     console.log("Dirección de recepción de pagos TON:", YOUR_TON_RECEIVING_ADDRESS);
 
     let userTonWalletInfo = null;
 
     function updateUserWalletUI(wallet) {
-        // ... (esta función es igual a la de la respuesta anterior, asegúrate que tonWalletAppNameSpan exista)
         if (wallet) {
             userTonWalletInfo = wallet;
             console.log("Billetera TON conectada/actualizada:", wallet);
@@ -87,7 +83,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (tonWalletInfoDiv) tonWalletInfoDiv.style.display = 'block';
             if (connectTonWalletBtn) connectTonWalletBtn.textContent = 'Desconectar Billetera';
             if (sendTonTransactionBtn) sendTonTransactionBtn.disabled = false;
-            // WebApp.showAlert(`Billetera ${wallet.device.appName} conectada!`); // Opcional: alerta nativa de Telegram
             showUIMessage(`Billetera ${wallet.device.appName} conectada!`, "success");
         } else {
             userTonWalletInfo = null;
@@ -102,90 +97,69 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
     
-    // Suscribirse a cambios de estado de la billetera TON Connect
-    // Este evento se dispara cuando el usuario conecta, desconecta, o la conexión se restaura.
     tonConnectUI.onStatusChange(walletOrNull => {
         console.log("TON Connect onStatusChange. Wallet:", walletOrNull);
         updateUserWalletUI(walletOrNull);
     });
 
-    // Verificar si hay una conexión restaurada (ej. si el usuario recarga la TMA)
-    // No es estrictamente necesario esperar la promesa si onStatusChange ya maneja el estado inicial.
     if (tonConnectUI.wallet) {
         console.log("Conexión de billetera TON ya existente al cargar:", tonConnectUI.wallet);
         updateUserWalletUI(tonConnectUI.wallet);
     } else {
         console.log("No hay conexión de billetera TON existente al cargar.");
-        updateUserWalletUI(null); // Asegura que la UI esté en estado desconectado
+        updateUserWalletUI(null);
     }
-
 
     if (connectTonWalletBtn) {
         connectTonWalletBtn.addEventListener('click', async () => {
             console.log("Botón 'Conectar/Desconectar Billetera TON' clickeado.");
             if (tonConnectUI.connected) {
-                console.log("Intentando desconectar billetera TON...");
-                await tonConnectUI.disconnect(); // Disparará onStatusChange
+                await tonConnectUI.disconnect();
             } else {
-                console.log("Abriendo modal de conexión de TON Connect...");
-                tonConnectUI.openModal(); // Muestra el popup para elegir billetera
+                tonConnectUI.openModal();
             }
         });
     } else {
-        console.error("Botón 'connect-ton-wallet-btn' no encontrado.");
+        console.error("Botón 'connect-ton-wallet-btn' no encontrado en el DOM.");
     }
 
     if (sendTonTransactionBtn) {
         sendTonTransactionBtn.addEventListener('click', async () => {
+            // ... (lógica de transacción idéntica a la anterior)
             console.log("Botón 'send-ton-payment-btn' clickeado.");
             if (!tonConnectUI.connected || !userTonWalletInfo) {
                 showUIMessage("Conecta tu billetera TON primero.", "error");
-                WebApp.showAlert("Por favor, conecta tu billetera TON primero."); // Alerta nativa
+                WebApp.showAlert("Por favor, conecta tu billetera TON primero.");
                 return;
             }
-            // ... (lógica de transacción como antes)
-            const amountNanoTON = '10000000'; // 0.01 TON para pruebas más baratas
+            const amountNanoTON = '10000000'; 
             const transaction = {
                 validUntil: Math.floor(Date.now() / 1000) + 600, 
-                messages: [{ address: YOUR_TON_RECEIVING_ADDRESS, amount: amountNanoTON, /* payload: 'tu_comentario_o_id_de_item' */ }]
+                messages: [{ address: YOUR_TON_RECEIVING_ADDRESS, amount: amountNanoTON, }]
             };
-
             try {
                 sendTonTransactionBtn.disabled = true;
                 showUIMessage(`Enviando ${parseFloat(amountNanoTON) / 1e9} TON... Confirma en tu billetera.`, "info", 7000);
-                
                 const result = await tonConnectUI.sendTransaction(transaction);
                 console.log("Transacción enviada con TON Connect! Resultado:", result); 
-                // El `result.boc` es la "bolsa de celdas" de la transacción firmada.
-                // NO significa que la transacción esté confirmada en la blockchain.
-                
-                // WebApp.HapticFeedback.notificationOccurred('success'); // Feedback háptico
                 showUIMessage(`Transacción propuesta a la billetera. Esperando confirmación en la red (simulada)...`, "info", 15000);
-
-                // **SIMULACIÓN DE ÉXITO - ¡NO USAR EN PRODUCCIÓN SIN VERIFICACIÓN REAL!**
                 setTimeout(() => {
                     showUIMessage("¡Pago recibido y procesado (simulado)!", "success");
                     WebApp.showAlert("¡Gracias por tu compra! (Simulado)");
-                    // Aquí tu lógica de juego: petTokens += N; updateDisplays();
                     if (tonConnectUI.connected) sendTonTransactionBtn.disabled = false;
                 }, 15000);
-
             } catch (error) {
                 console.error("Error al enviar transacción TON:", error);
-                // WebApp.HapticFeedback.notificationOccurred('error');
                 let errorMessage = "Error al enviar la transacción.";
                  if (error && typeof error === 'object' && 'message' in error) {
-                    // Algunos errores comunes del SDK de TON Connect UI
-                    if (error.message.includes('Modal is not opened') || error.message.includes('Modal is closed')) {
-                         errorMessage = "El modal de conexión no está abierto o fue cerrado.";
-                    } else if (error.message.includes('User rejected')) {
-                         errorMessage = "Transacción rechazada por el usuario.";
-                    } else if (error.message.includes('Wallet not connected')) {
-                         errorMessage = "La billetera no está conectada.";
-                    } else {
-                        errorMessage = `Error: ${error.message.substring(0, 80)}`;
+                    if (error.message.toLowerCase().includes('user rejected')) {
+                        errorMessage = "Transacción rechazada por el usuario.";
+                    } else if (error.message.toLowerCase().includes('popup_closed')) {
+                        errorMessage = "Modal de confirmación cerrado por el usuario.";
+                    } else if (error.message.length < 80) { 
+                        errorMessage = `Error: ${error.message}`;
                     }
-                } else if (typeof error === 'string' && error.includes('popup_closed')) { // Algunos errores de billeteras pueden ser strings
+                } else if (typeof error === 'string' && error.toLowerCase().includes('popup_closed')) {
                     errorMessage = "Ventana de confirmación cerrada por el usuario.";
                 }
                 showUIMessage(errorMessage, "error");
@@ -193,29 +167,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (tonConnectUI.connected) sendTonTransactionBtn.disabled = false;
             }
         });
+    } else {
+         console.error("Botón 'send-ton-payment-btn' no encontrado en el DOM.");
     }
 
-    // Función para mostrar mensajes en la UI (ya la tenías, la adapto un poco)
     function showUIMessage(text, type = "info", duration = 5000) {
         if (!messagesDisplay) {
             console.warn("Elemento messagesDisplay no encontrado para mensaje:", text);
             return;
         }
-        // console.log(`UI Mensaje [${type}]: ${text}`);
         messagesDisplay.textContent = text;
-        messagesDisplay.className = ''; // Limpiar clases anteriores
-        messagesDisplay.classList.add(`message-${type}`); // Añadir nueva clase de tipo
-        
-        // Limpiar mensaje después de la duración
+        messagesDisplay.className = ''; 
+        messagesDisplay.classList.add(`message-${type}`); 
         setTimeout(() => { 
-            if(messagesDisplay && messagesDisplay.textContent === text) { // Solo si el mensaje no ha cambiado
+            if(messagesDisplay && messagesDisplay.textContent === text) {
                 messagesDisplay.textContent = ""; 
                 messagesDisplay.className = ""; 
             }
         }, duration);
     }
     
-    // --- Lógica del Juego (Ejemplo - integra la tuya) ---
+    // Lógica del juego
     let petTokens = 0;
     let currentPetLevel = 0;
     const petTokensDisplay = document.getElementById('pet-tokens-balance');
@@ -224,9 +196,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     function updateGameDisplays() {
         if(petTokensDisplay) petTokensDisplay.textContent = String(Math.floor(petTokens));
         if(petEvolutionLevelDisplay) petEvolutionLevelDisplay.textContent = String(currentPetLevel);
-        // ... y cualquier otra actualización de la UI de tu juego
     }
-    updateGameDisplays(); // Llamada inicial
+    updateGameDisplays();
 
     console.log("Script.js TMA finalizado. App lista.");
 });
