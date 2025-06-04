@@ -8,7 +8,14 @@ html, body { width: 100%; height: 100%; overflow: hidden; background-color: #f0f
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column;
     border: 4px solid white; padding: 10px; overflow: hidden;
 }
-
+#wallet-info span {
+    display: block; /* Para que la red aparezca debajo de la dirección */
+    margin-top: 2px;
+}
+#network-name-display {
+    font-style: italic;
+    color: #555;
+}
 /* Encabezado */
 #game-header {
     padding: 12px 15px; background-color: rgba(255, 255, 255, 0.85);
