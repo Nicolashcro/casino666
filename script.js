@@ -1,35 +1,62 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("DOM cargado. Iniciando juego con TON Connect.");
+    console.log("DOM completamente cargado. Iniciando script.js...");
 
-    // --- Selectores del DOM (adapta según tus IDs) ---
-    const connectTonWalletBtn = document.getElementById('connect-ton-wallet-btn'); // Necesitarás un nuevo botón en tu HTML
-    const tonWalletInfoDiv = document.getElementById('ton-wallet-info'); // Div para mostrar info de billetera TON
+    // --- Selectores del DOM ---
+    const connectTonWalletBtn = document.getElementById('connect-ton-wallet-btn');
+    const tonWalletInfoDiv = document.getElementById('ton-wallet-info');
     const tonWalletAddressSpan = document.getElementById('ton-wallet-address');
     const tonNetworkSpan = document.getElementById('ton-network');
-    const sendTonTransactionBtn = document.getElementById('send-ton-payment-btn'); // Botón para pagar
-    const messagesDisplay = document.getElementById('messages-display'); // Ya lo tenías
+    const sendTonTransactionBtn = document.getElementById('send-ton-payment-btn');
+    const messagesDisplay = document.getElementById('messages-display');
+
+    console.log("Botón 'Conectar Billetera TON' encontrado:", connectTonWalletBtn);
+    console.log("Div 'ton-wallet-info' encontrado:", tonWalletInfoDiv);
+
+    // --- Tu API Key de TON (004a2...) NO se usa para TonConnectUI ---
+    // Esa clave es para interactuar con APIs de nodos TON (ej. Toncenter), no para la conexión de billetera cliente.
 
     // --- Configuración de TON Connect ---
-    const { TonConnectUI } = TONConnectSDK; // Acceder desde el SDK global
-    const tonConnectUI = new TonConnectUI({
-        manifestUrl: 'https_url_a_tu_tonconnect-manifest.json_en_github_pages', // ¡IMPORTANTE!
-        buttonRootId: 'ton-connect-button-container' // Opcional: si quieres que el SDK genere un botón
-    });
+    if (typeof TONConnectSDK === 'undefined') {
+        console.error("¡ERROR CRÍTICO: TONConnectSDK no está definido! Asegúrate de que el script del SDK se haya cargado antes que este script.");
+        showUIMessage("Error: No se pudo cargar el SDK de TON Connect.", "error");
+        return; // Detener la ejecución si el SDK no está
+    }
 
-    // Tu dirección de billetera TON para recibir pagos
-    const YOUR_TON_RECEIVING_ADDRESS = "TU_DIRECCION_DE_BILLETERA_TON_AQUI"; // Ej: UQxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    const { TonConnectUI, THEME } = TONConnectSDK; // Acceder desde el SDK global
+    const manifestUrl = 'https://tu-usuario.github.io/tu-repositorio/tonconnect-manifest.json'; // ¡¡¡REEMPLAZA ESTA URL!!!
+    console.log("Usando manifestUrl:", manifestUrl);
+
+    let tonConnectUI;
+    try {
+        tonConnectUI = new TonConnectUI({
+            manifestUrl: manifestUrl,
+            // buttonRootId: 'ton-connect-button-container', // Descomenta si quieres que el SDK genere un botón
+            // language: 'es', // Opcional
+            // uiPreferences: { theme: THEME.DARK } // Opcional
+        });
+        console.log("TonConnectUI inicializado correctamente:", tonConnectUI);
+    } catch (error) {
+        console.error("Error al inicializar TonConnectUI:", error);
+        showUIMessage("Error al inicializar la conexión con billetera TON. Revisa la consola.", "error");
+        return;
+    }
+
+    const YOUR_TON_RECEIVING_ADDRESS = "TU_DIRECCION_DE_BILLETERA_TON_AQUI";
+    console.log("Dirección de recepción de pagos TON:", YOUR_TON_RECEIVING_ADDRESS);
+    if (YOUR_TON_RECEIVING_ADDRESS === "TU_DIRECCION_DE_BILLETERA_TON_AQUI") {
+        console.warn("ADVERTENCIA: Debes configurar tu YOUR_TON_RECEIVING_ADDRESS.");
+        showUIMessage("Advertencia: Configura tu dirección de recepción de TON en el script.", "error", 10000);
+    }
+
 
     let userTonWalletInfo = null;
 
-    // --- Funciones de TON Connect ---
-
-    // Actualizar UI con información de la billetera
     function updateUserWalletUI(wallet) {
         if (wallet) {
             userTonWalletInfo = wallet;
-            console.log("Billetera TON conectada:", wallet);
+            console.log("Billetera TON conectada/actualizada:", wallet);
             if (tonWalletAddressSpan) tonWalletAddressSpan.textContent = `${wallet.account.address.slice(0, 6)}...${wallet.account.address.slice(-4)}`;
-            if (tonNetworkSpan) tonNetworkSpan.textContent = wallet.account.chain === '-239' ? 'TON Mainnet' : 'TON Testnet'; // -239 es mainnet, -3 es testnet
+            if (tonNetworkSpan) tonNetworkSpan.textContent = wallet.account.chain === '-239' ? 'TON Mainnet' : (wallet.account.chain === '-3' ? 'TON Testnet' : `Red ID ${wallet.account.chain}`);
             if (tonWalletInfoDiv) tonWalletInfoDiv.style.display = 'block';
             if (connectTonWalletBtn) connectTonWalletBtn.textContent = 'Desconectar Billetera TON';
             if (sendTonTransactionBtn) sendTonTransactionBtn.disabled = false;
@@ -39,38 +66,81 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("Billetera TON desconectada.");
             if (tonWalletAddressSpan) tonWalletAddressSpan.textContent = '';
             if (tonNetworkSpan) tonNetworkSpan.textContent = 'Desconectada';
-            // if (tonWalletInfoDiv) tonWalletInfoDiv.style.display = 'none'; // Ocultar o mostrar según diseño
+            if (tonWalletInfoDiv) tonWalletInfoDiv.style.display = 'none';
             if (connectTonWalletBtn) connectTonWalletBtn.textContent = 'Conectar Billetera TON';
             if (sendTonTransactionBtn) sendTonTransactionBtn.disabled = true;
             showUIMessage("Billetera desconectada.", "info");
         }
     }
 
-    // Suscribirse a cambios de estado de la billetera
+    console.log("Suscribiéndose a cambios de estado de TON Connect...");
     tonConnectUI.onStatusChange(
-        wallet => updateUserWalletUI(wallet),
-        error => { // Opcional: manejar errores de suscripción
-            console.error("Error en la suscripción de estado de TON Connect:", error);
+        wallet => {
+            console.log("Evento onStatusChange disparado. Wallet:", wallet);
+            updateUserWalletUI(wallet);
+        },
+        error => {
+            console.error("Error en la suscripción de estado de TON Connect (onStatusChange):", error);
             showUIMessage("Error de conexión con billetera.", "error");
         }
     );
 
-    // Botón de Conectar/Desconectar
+    // Restaurar conexión si existe
+    // Esto es asíncrono, pero el onStatusChange debería eventualmente actualizar la UI.
+    // No es estrictamente necesario esperar aquí si la UI se actualiza por el evento.
+    tonConnectUI.connectionRestored.then(restored => {
+        console.log("Intento de restauración de conexión completado. Restaurada:", restored);
+        if (restored && tonConnectUI.wallet) {
+             console.log("Conexión restaurada con:", tonConnectUI.wallet);
+             // onStatusChange ya debería haber manejado esto, pero podemos forzar por si acaso.
+             // updateUserWalletUI(tonConnectUI.wallet);
+        } else if (tonConnectUI.wallet) {
+            // A veces el estado ya está presente sin que `connectionRestored` sea true explícitamente.
+            console.log("Conexión ya presente al cargar:", tonConnectUI.wallet);
+            // updateUserWalletUI(tonConnectUI.wallet);
+        } else {
+            console.log("No hay conexión para restaurar o ya está desconectada.");
+            updateUserWalletUI(null); // Asegurar UI limpia si no hay billetera
+        }
+    }).catch(err => {
+        console.error("Error durante connectionRestored:", err);
+    });
+
+
     if (connectTonWalletBtn) {
         connectTonWalletBtn.addEventListener('click', async () => {
+            console.log("Botón 'Conectar/Desconectar Billetera TON' clickeado.");
+            if (!tonConnectUI) {
+                console.error("tonConnectUI no está definido al hacer clic en el botón.");
+                return;
+            }
             if (tonConnectUI.connected) {
-                await tonConnectUI.disconnect();
-                // El evento onStatusChange actualizará la UI
+                console.log("Intentando desconectar billetera...");
+                try {
+                    await tonConnectUI.disconnect();
+                    console.log("Desconexión solicitada."); // onStatusChange actualizará la UI
+                } catch (error) {
+                    console.error("Error durante tonConnectUI.disconnect():", error);
+                    showUIMessage("Error al intentar desconectar.", "error");
+                }
             } else {
-                // Abre el modal para conectar. El SDK maneja la selección de billetera (Tonkeeper, MyTonWallet, @Wallet, etc.)
-                tonConnectUI.openModal();
+                console.log("Abriendo modal de conexión de TON Connect...");
+                try {
+                    tonConnectUI.openModal();
+                } catch (error) {
+                     console.error("Error durante tonConnectUI.openModal():", error);
+                     showUIMessage("Error al abrir el modal de conexión.", "error");
+                }
             }
         });
+    } else {
+        console.error("No se encontró el botón con ID 'connect-ton-wallet-btn'.");
     }
 
-    // Enviar Transacción (Pago)
     if (sendTonTransactionBtn) {
         sendTonTransactionBtn.addEventListener('click', async () => {
+            console.log("Botón 'send-ton-payment-btn' clickeado.");
+            // ... (resto de la lógica de sendTonTransactionBtn como en la respuesta anterior)
             if (!tonConnectUI.connected || !userTonWalletInfo) {
                 showUIMessage("Conecta tu billetera TON primero.", "error");
                 return;
@@ -80,44 +150,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.error("CRÍTICO: YOUR_TON_RECEIVING_ADDRESS no está configurada.");
                 return;
             }
-
-            // Ejemplo de transacción: enviar 0.1 TON
-            // El valor se especifica en nanoTONs (1 TON = 1,000,000,000 nanoTONs)
             const amountNanoTON = '100000000'; // 0.1 TON
             const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutos de validez
-                messages: [
-                    {
-                        address: YOUR_TON_RECEIVING_ADDRESS,
-                        amount: amountNanoTON,
-                        // payload: "base64_encoded_comment_optional" // Comentario opcional o datos
-                    }
-                    // Puedes añadir más mensajes si es una transacción múltiple
-                ]
+                validUntil: Math.floor(Date.now() / 1000) + 600, 
+                messages: [{ address: YOUR_TON_RECEIVING_ADDRESS, amount: amountNanoTON }]
             };
-
             try {
                 sendTonTransactionBtn.disabled = true;
                 showUIMessage(`Enviando ${parseFloat(amountNanoTON) / 1e9} TON... Confirma en tu billetera.`, "info");
-
                 const result = await tonConnectUI.sendTransaction(transaction);
-                console.log("Transacción enviada! Resultado:", result); // `result.boc` contiene la transacción firmada
-
-                // **IMPORTANTE: VERIFICACIÓN DE LA TRANSACCIÓN**
-                // Aquí solo se confirma que la billetera firmó y envió la transacción.
-                // Para acreditar algo en tu juego, DEBES verificar que la transacción
-                // se haya completado exitosamente en la blockchain TON.
-                // Esto usualmente se hace en un backend o esperando y consultando un explorador de TON.
-                // Para este ejemplo, simularemos un éxito.
+                console.log("Transacción enviada! Resultado:", result); 
                 showUIMessage(`Transacción enviada (BOC: ${result.boc.slice(0,10)}...). Esperando confirmación (simulada)...`, "success");
-
                 setTimeout(() => {
-                    // Aquí iría la lógica de tu juego después de un pago "confirmado"
-                    // Ejemplo: petTokens += 1000; updateDisplays();
                     showUIMessage("¡Pago recibido y procesado (simulado)!", "success");
-                    sendTonTransactionBtn.disabled = false;
-                }, 15000); // Simular espera
-
+                    if (tonConnectUI.connected) sendTonTransactionBtn.disabled = false; // Solo re-habilita si sigue conectado
+                }, 15000); 
             } catch (error) {
                 console.error("Error al enviar transacción TON:", error);
                 let errorMessage = "Error al enviar la transacción.";
@@ -129,17 +176,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
                 showUIMessage(errorMessage, "error");
-                sendTonTransactionBtn.disabled = false;
+                 if (tonConnectUI.connected) sendTonTransactionBtn.disabled = false;
             }
         });
+    } else {
+         console.error("No se encontró el botón con ID 'send-ton-payment-btn'.");
     }
 
-    // --- Lógica del Juego (simplificada, integra la tuya) ---
-    // ... (Aquí va el resto de la lógica de tu juego: petTokens, level, etc. que ya tenías)
+
     function showUIMessage(text, type = "info", duration = 5000) {
-        if (!messagesDisplay) return;
+        if (!messagesDisplay) {
+            console.warn("Elemento messagesDisplay no encontrado para mostrar mensaje:", text);
+            return;
+        }
+        // console.log(`Mostrando UI Mensaje [${type}]: ${text}`); // Descomenta si quieres ver todos los mensajes en consola
         messagesDisplay.textContent = text;
-        messagesDisplay.className = `message-${type}`; // Asume que tienes clases CSS .message-info, .message-error, .message-success
+        messagesDisplay.className = `message-${type}`;
         setTimeout(() => { 
             if(messagesDisplay && messagesDisplay.textContent === text) {
                 messagesDisplay.textContent = ""; 
@@ -148,18 +200,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, duration);
     }
     
-    // Para inicializar la UI de la billetera al cargar (si ya estaba conectada)
-    // tonConnectUI.connectionRestored.then(restored => {
-    //     if (restored) {
-    //         console.log("Conexión restaurada con:", tonConnectUI.wallet);
-    //         updateUserWalletUI(tonConnectUI.wallet);
-    //     }
-    // });
-    // O puedes usar el estado inicial de tonConnectUI.wallet
-    if (tonConnectUI.wallet) {
-        updateUserWalletUI(tonConnectUI.wallet);
+    // --- Lógica del juego (simplificada) ---
+    // ... (tu lógica de petTokens, level, etc.)
+    let petTokens = 0; // Ejemplo
+    const petTokensDisplay = document.getElementById('pet-tokens-balance'); // Ejemplo
+    function updateDisplays() { // Ejemplo
+        if(petTokensDisplay) petTokensDisplay.textContent = String(Math.floor(petTokens));
     }
+    updateDisplays(); // Llamada inicial ejemplo
 
-
-    console.log("Juego y TON Connect listos.");
+    console.log("Script.js finalizado. Esperando interacciones del usuario.");
 });
