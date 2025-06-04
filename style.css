@@ -1,30 +1,206 @@
-body, html {
+/* Estilos Generales y Reseteo Básico */
+* {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
     width: 100%;
     height: 100%;
-    font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
-    background-color: #f0f8ff; 
-    color: #333;
-    display: flex; /* Clave para centrar el game-container */
+    overflow: hidden;
+    background-color: #e6f7ff; /* Un azul cielo muy claro */
+    color: #33475b; /* Un azul oscuro para el texto */
+    display: flex;
     justify-content: center;
     align-items: center;
     user-select: none;
-    overflow: hidden;
+    font-size: 16px; /* Base de fuente */
 }
 
 #game-container {
     width: 100%;
-    max-width: 420px;
+    max-width: 400px;
     height: 100%;
-    max-height: 700px; /* O la altura que prefieras */
-    background: linear-gradient(135deg, #ffd1dc, #d1ffd1);
-    border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    max-height: 720px; /* Altura máxima para la mayoría de los móviles */
+    background: linear-gradient(145deg, #ffffff, #e6f7ff); /* Blanco a azul claro */
+    border-radius: 24px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    /* overflow: hidden; */ /* Comentar temporalmente si algo se corta */
-    border: 5px solid white;
-    padding: 10px; /* Añadir un padding general por si acaso */
+    border: 4px solid white;
+    padding: 10px;
+    overflow: hidden; /* Evitar que el contenido se desborde del contenedor principal */
 }
-/* ... (resto del CSS "tierno" que te di antes) ... */
+
+/* Encabezado */
+#game-header {
+    padding: 12px 15px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-bottom: 1px solid #cce0ff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    border-radius: 10px 10px 0 0;
+}
+
+#currency-display .currency {
+    font-size: 1em;
+    font-weight: bold;
+    color: #007bff;
+    background-color: rgba(0, 123, 255, 0.1);
+    padding: 6px 12px;
+    border-radius: 8px;
+}
+
+#wallet-section button {
+    padding: 7px 14px;
+    font-size: 0.8em;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+#wallet-section button:hover {
+    background-color: #0056b3;
+}
+#wallet-info {
+    font-size: 0.7em;
+    margin-top: 4px;
+    color: #555;
+    text-align: right;
+}
+#wallet-address-placeholder { font-weight: bold; }
+
+/* Área Principal del Juego */
+#main-game-area {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around; /* Distribuir el espacio */
+    padding: 15px;
+    gap: 15px;
+    overflow-y: auto; /* Scroll si es necesario */
+}
+
+#pet-display-area { text-align: center; }
+
+#pet-image-container {
+    width: 140px;
+    height: 140px;
+    background-color: #d1eaff; /* Azul claro para el fondo de la mascota */
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border: 4px solid white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: transform 0.1s ease-out;
+}
+#pet-image-container:active { transform: scale(0.93); }
+#pet-placeholder { font-size: 4.5em; color: #6c757d; }
+#pet-name { margin-top: 8px; font-size: 1.1em; font-weight: bold; color: #343a40; }
+
+/* Controles de Toque y Energía */
+#tap-controls { width: 90%; text-align: center; }
+#energy-bar-container { font-size: 0.9em; color: #495057; margin-bottom: 5px; }
+#energy-bar {
+    width: 100%;
+    height: 18px;
+    background-color: #e9ecef;
+    border-radius: 9px;
+    border: 1px solid #ced4da;
+    overflow: hidden;
+    margin-top: 4px;
+}
+#energy-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(to right, #28a745, #20c997); /* Verde fresco */
+    border-radius: 7px;
+    transition: width 0.2s ease-out;
+}
+#energy-value, #energy-max { font-weight: bold; }
+
+/* Sección de Evolución y Pagos */
+#evolution-section, #payment-simulation-zone { text-align: center; margin-top: 10px; width: 90%;}
+#evolution-section p, #payment-simulation-zone p { font-size: 0.9em; color: #495057; margin-bottom: 8px; }
+#evolve-button, #buy-tokens-with-ton-btn {
+    padding: 10px 22px;
+    font-size: 1em;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+    margin-bottom: 5px;
+    width: 100%;
+}
+#evolve-button { background-color: #ffc107; /* Amarillo ámbar */ }
+#evolve-button:hover:not(:disabled) { background-color: #e0a800; }
+#buy-tokens-with-ton-btn { background-color: #17a2b8; /* Azul info */ }
+#buy-tokens-with-ton-btn:hover:not(:disabled) { background-color: #138496; }
+
+#evolve-button:active:not(:disabled), #buy-tokens-with-ton-btn:active:not(:disabled) { transform: scale(0.96); }
+#evolve-button:disabled, #buy-tokens-with-ton-btn:disabled { background-color: #ced4da; color: #6c757d; cursor: not-allowed; box-shadow: none;}
+
+#deposit-address-message {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 8px;
+    border-radius: 5px;
+    font-size: 0.85em !important; /* Sobrescribir para que sea legible */
+    color: #212529 !important;
+    word-break: break-all;
+}
+
+/* Mensajes */
+#messages-display { /* Cambiado ID */
+    min-height: 22px;
+    font-size: 0.9em;
+    text-align: center;
+    font-weight: bold;
+    padding: 5px;
+    width: 90%;
+    border-radius: 5px;
+}
+.message-error { color: #dc3545; background-color: #f8d7da; border: 1px solid #f5c6cb;}
+.message-success { color: #28a745; background-color: #d4edda; border: 1px solid #c3e6cb;}
+.message-info { color: #007bff; background-color: #cce5ff; border: 1px solid #b8daff;}
+
+
+/* Footer */
+footer {
+    padding: 8px; text-align: center; font-size: 0.75em; color: #6c757d;
+    background-color: rgba(233, 236, 239, 0.8); border-top: 1px solid #dee2e6;
+    flex-shrink: 0; border-radius: 0 0 10px 10px;
+}
+
+/* Feedback de Toque */
+.tap-feedback {
+    position: absolute; /* Se posicionará con JS relativo al game-area */
+    font-size: 1.6em;
+    color: #ff9800; /* Naranja brillante */
+    opacity: 1;
+    animation: floatAndFadeOut 0.8s ease-out forwards;
+    pointer-events: none;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px white;
+}
+@keyframes floatAndFadeOut {
+    to { transform: translateY(-60px); opacity: 0; }
+}
+
+/* Tooltip (si lo necesitas) */
+.tooltip { position: relative; cursor: help; }
+.tooltip:hover::after {
+  content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%) translateY(-5px); background-color: #343a40; color
