@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Crypto Pets - Tap & Evolve! (TON Real)</title>
+    <title>Crypto Pets - Tap & Evolve! (TON UI)</title>
     
-    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,7 +21,7 @@
                     Conectado: <span id="wallet-address" data-tooltip="Tu dirección de Billetera TON"></span>
                     (<span id="wallet-network"></span>)
                 </div>
-            </div>
+                 </div>
         </header>
 
         <main id="main-game-area">
@@ -54,16 +55,6 @@
         <footer>
              <p>Crypto Pets - Tap & Evolve!</p>
         </footer>
-    </div>
-
-    <div id="wallet-selection-modal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <span id="close-wallet-modal-btn" class="close-button">&times;</span>
-            <h3>Elige tu Billetera TON</h3>
-            <div id="wallet-buttons-container">
-                </div>
-            <p id="wallet-modal-message" style="margin-top:10px;"></p>
-        </div>
     </div>
 
     <script src="script.js"></script>
