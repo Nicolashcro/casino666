@@ -1,285 +1,135 @@
-/* Estilos Generales y Reseteo */
-* {
+/* Estilos CSS muy básicos para asegurar la visualización */
+body, html {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
-    font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
-    -webkit-tap-highlight-color: transparent; /* Evitar resaltado en toques */
-}
-
-html, body {
     width: 100%;
     height: 100%;
-    overflow: hidden; /* Evitar scroll en la página principal */
-    background-color: #f0f8ff; /* AliceBlue - un fondo tierno */
+    font-family: Arial, sans-serif;
+    background-color: #e0f0ff; /* Un color de fondo suave */
     color: #333;
+    overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
-    user-select: none; /* Evitar selección de texto accidental */
+    user-select: none;
 }
 
-#game-container {
+#game-area {
     width: 100%;
-    max-width: 420px; /* Ideal para móviles */
+    max-width: 400px; /* Para simular vista móvil */
     height: 100%;
-    max-height: 800px; /* Limitar altura en pantallas grandes */
-    background: linear-gradient(135deg, #ffd1dc, #d1ffd1); /* Rosa pastel a verde pastel */
-    border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    max-height: 700px;
+    background-color: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Contener elementos flotantes o animaciones */
-    border: 5px solid white;
+    padding: 15px;
+    text-align: center;
 }
 
-/* Encabezado */
-#game-header {
-    padding: 15px 20px;
-    background-color: rgba(255, 255, 255, 0.7);
-    border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+#header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
     flex-shrink: 0;
 }
 
-#currency-display .currency {
+#balance {
     font-size: 1.1em;
     font-weight: bold;
-    color: #5d4037; /* Marrón oscuro para contraste */
-    background-color: rgba(255, 255, 255, 0.8);
-    padding: 5px 10px;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-#wallet-section button {
+#wallet-connect-area button {
     padding: 8px 12px;
-    font-size: 0.8em;
-    background-color: #87ceeb; /* SkyBlue */
+    background-color: #007bff;
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.2s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-size: 0.9em;
 }
-#wallet-section button:hover {
-    background-color: #76b6d2;
+#wallet-connect-area button:hover {
+    background-color: #0056b3;
 }
-#wallet-info {
+#wallet-details {
     font-size: 0.7em;
     margin-top: 5px;
-    color: #6a5acd; /* SlateBlue */
+    color: #555;
 }
-#wallet-address { font-weight: bold; }
 
-/* Área Principal del Juego */
-#main-game-area {
+#pet-zone {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center; /* Centrar más el contenido */
-    padding: 20px;
-    gap: 25px; /* Espacio entre secciones */
-    overflow-y: auto; /* Scroll si el contenido es mucho */
-}
-
-#pet-display-area {
-    text-align: center;
-}
-
-#pet-image-container {
-    width: 150px;
-    height: 150px;
-    background-color: rgba(255, 255, 255, 0.8);
-    border-radius: 50%; /* Círculo para la mascota */
-    display: flex;
     justify-content: center;
     align-items: center;
+}
+
+#pet-visual {
+    font-size: 6em; /* Placeholder para la mascota */
+    margin: 20px;
     cursor: pointer;
-    border: 5px solid white;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    transition: transform 0.1s ease-out;
+    padding: 20px;
+    background-color: #f0f0f0;
+    border-radius: 50%;
+    transition: transform 0.1s;
 }
-#pet-image-container:active {
-    transform: scale(0.92);
-}
-/* #pet-image { max-width: 90%; max-height: 90%; object-fit: contain; } */
-#pet-placeholder {
-    font-size: 5em; /* Tamaño del emoji de huella */
-    color: #a1887f; /* Un color tierra suave */
+#pet-visual:active {
+    transform: scale(0.9);
 }
 
-#pet-name {
-    margin-top: 10px;
-    font-size: 1.2em;
-    font-weight: bold;
-    color: #4e342e; /* Marrón más oscuro */
-}
-
-/* Controles de Toque y Energía */
-#tap-controls {
-    width: 100%;
-    max-width: 300px;
-    text-align: center;
-}
-#energy-bar-container {
-    font-size: 0.9em;
-    color: #5d4037;
-    margin-bottom: 5px;
-}
-#energy-bar {
-    width: 100%;
-    height: 20px;
-    background-color: rgba(255, 255, 255, 0.7);
-    border-radius: 10px;
-    border: 1px solid rgba(0,0,0,0.1);
-    overflow: hidden;
-    margin-top: 5px;
-}
-#energy-fill {
-    height: 100%;
-    width: 100%; /* Se actualizará con JS */
-    background: linear-gradient(to right, #76eec6, #64d8b3); /* Verde menta */
-    border-radius: 8px; /* Para que el relleno también sea redondeado */
-    transition: width 0.2s ease-out;
-}
-#energy-value, #energy-max { font-weight: bold; }
-
-/* Sección de Evolución */
-#evolution-section {
-    text-align: center;
+#pet-zone p {
+    font-size: 1em;
     margin-top: 10px;
 }
-#evolve-button {
-    padding: 12px 25px;
-    font-size: 1.1em;
-    background-color: #ffb74d; /* Naranja pastel */
-    color: white;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
-    box-shadow: 0 3px 5px rgba(0,0,0,0.1);
-    margin-bottom: 8px;
-}
-#evolve-button:hover:not(:disabled) {
-    background-color: #ffa726;
-}
-#evolve-button:active:not(:disabled) {
-    transform: scale(0.95);
-}
-#evolve-button:disabled {
-    background-color: #e0e0e0; /* Gris claro */
-    color: #a0a0a0;
-    cursor: not-allowed;
-    box-shadow: none;
-}
-#evolution-section p {
-    font-size: 0.9em;
-    color: #5d4037;
-}
-#evolution-cost { font-weight: bold; }
 
-/* Mensajes */
-#messages {
-    min-height: 20px;
-    font-size: 0.9em;
-    color: #ff6347; /* Tomato */
-    text-align: center;
-    font-weight: bold;
-}
-
-/* Footer */
-footer {
-    padding: 10px;
-    text-align: center;
-    font-size: 0.7em;
-    color: #777;
-    background-color: rgba(255, 255, 255, 0.5);
-    border-top: 1px solid rgba(0,0,0,0.05);
+#action-zone, #payment-simulation-zone {
+    padding: 15px 0;
+    width: 100%;
     flex-shrink: 0;
 }
-
-/* Modal de Conexión (Simulado) */
-.modal {
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.4);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000; /* Encima de todo */
-}
-.modal-content {
-    background-color: #fff5e1; /* Crema */
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-    width: 80%;
-    max-width: 350px;
-    text-align: center;
-    border: 3px solid white;
-}
-.modal-content h3 { color: #4a2c2a; margin-bottom: 15px; }
-.modal-content p { color: #5d4037; margin-bottom: 15px; font-size: 0.9em;}
-.close-button {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    line-height: 0.5; /* Ajustar para mejor posición */
-}
-.close-button:hover, .close-button:focus {
-    color: #333;
-    text-decoration: none;
-}
-.wallet-option-btn {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    background-color: #87ceeb;
+#energy-display { margin-bottom: 10px; }
+#action-zone button, #payment-simulation-zone button {
+    padding: 10px 20px;
+    font-size: 1em;
+    background-color: #28a745;
     color: white;
     border: none;
-    border-radius: 8px;
-    font-size: 1em;
+    border-radius: 5px;
     cursor: pointer;
+    margin-top: 5px;
 }
-.wallet-option-btn:hover {
-    background-color: #76b6d2;
+#action-zone button:hover, #payment-simulation-zone button:hover {
+    background-color: #1e7e34;
+}
+#action-zone button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
 }
 
-/* Animación de feedback de toque */
-#pet-display-area {
-    position: relative; /* Para posicionar el feedback */
+#messages {
+    min-height: 20px;
+    color: #dc3545;
+    font-size: 0.9em;
+    margin-top: 10px;
 }
-.tap-value-feedback {
+
+/* Clases para feedback de toque */
+.tap-feedback {
     position: absolute;
-    top: 40%; /* Ajustar para que aparezca cerca de la mascota */
-    left: 50%;
-    transform: translateX(-50%);
     font-size: 1.5em;
-    font-weight: bold;
-    color: #ff9800; /* Naranja para el valor del token */
-    pointer-events: none; /* Para que no interfiera con los toques */
-    animation: floatAndFade 0.8s ease-out forwards;
+    color: #ffc107; /* Amarillo */
+    opacity: 1;
+    animation: floatAndFadeOut 1s ease-out forwards;
+    pointer-events: none; /* No interferir con clics */
 }
-
-@keyframes floatAndFade {
-    0% {
-        opacity: 1;
-        transform: translate(-50%, 0);
-    }
-    100% {
+@keyframes floatAndFadeOut {
+    to {
+        transform: translateY(-50px);
         opacity: 0;
-        transform: translate(-50%, -50px); /* Flotar hacia arriba */
     }
 }
