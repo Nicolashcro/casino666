@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Crypto Pets - Tap & Evolve!</title>
+    <title>Crypto Pets - Tap & Evolve! (TON Real)</title>
+    
+    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
     <link rel="stylesheet" href="style.css">
-    </head>
+</head>
 <body>
     <div id="game-container">
         <header id="game-header">
@@ -15,7 +17,8 @@
             <div id="wallet-section">
                 <button id="connect-wallet-btn">Conectar Billetera</button>
                 <div id="wallet-info" style="display: none;">
-                    <span id="wallet-address-placeholder" data-tooltip="Dirección simulada"></span>
+                    Conectado: <span id="wallet-address" data-tooltip="Tu dirección de Billetera TON"></span>
+                    (<span id="wallet-network"></span>)
                 </div>
             </div>
         </header>
@@ -23,7 +26,7 @@
         <main id="main-game-area">
             <div id="pet-display-area">
                 <div id="pet-image-container" title="¡Toca para ganar PetTokens!">
-                    <div id="pet-placeholder">🐾</div>
+                    <div id="pet-placeholder">🐾</div> 
                 </div>
                 <p id="pet-name">Mascota Nivel <span id="pet-evolution-level">0</span></p>
             </div>
@@ -40,19 +43,27 @@
                 <p>Costo: <span id="evolution-cost">10</span> PetTokens</p>
             </div>
 
-            <div id="payment-simulation-zone">
+            <div id="payment-section">
                 <p>Comprar 1000 PetTokens (0.1 TON)</p>
-                <button id="buy-tokens-with-ton-btn" disabled>Comprar (Simulado)</button>
-                <p id="deposit-address-message" style="display:none; margin-top:10px; font-size:0.8em;">
-                    Simulación: Pagarías a:<br><strong id="game-ton-address-placeholder">TU_DIRECCION_TON_AQUI</strong>
-                </p>
+                <button id="buy-tokens-with-ton-btn" disabled>Comprar con TON</button>
             </div>
             
-            <div id="messages-display"></div> </main>
+            <div id="messages-display"></div>
+        </main>
         
         <footer>
              <p>Crypto Pets - Tap & Evolve!</p>
         </footer>
+    </div>
+
+    <div id="wallet-selection-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span id="close-wallet-modal-btn" class="close-button">&times;</span>
+            <h3>Elige tu Billetera TON</h3>
+            <div id="wallet-buttons-container">
+                </div>
+            <p id="wallet-modal-message" style="margin-top:10px;"></p>
+        </div>
     </div>
 
     <script src="script.js"></script>
