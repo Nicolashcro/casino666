@@ -1,13 +1,14 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // --- Selectores del DOM ---
     const petTokensDisplay = document.getElementById('pet-tokens-balance');
     const connectWalletBtn = document.getElementById('connect-wallet-btn');
     const walletInfoDiv = document.getElementById('wallet-info');
-    const walletAddressPlaceholder = document.getElementById('wallet-address-placeholder');
+    const walletAddressDisplay = document.getElementById('wallet-address');
+    const walletNetworkDisplay = document.getElementById('wallet-network');
     
     const petImageContainer = document.getElementById('pet-image-container');
     const petPlaceholder = document.getElementById('pet-placeholder');
-    const petLevelDisplay = document.getElementById('pet-level');
+    const petLevelDisplay = document.getElementById('pet-evolution-level');
     
     const energyFill = document.getElementById('energy-fill');
     const energyValueDisplay = document.getElementById('energy-value');
@@ -15,17 +16,20 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const evolveBtn = document.getElementById('evolve-button');
     const evolveCostDisplay = document.getElementById('evolution-cost');
-    const messagesDisplay = document.getElementById('messages-display'); // ID corregido
+    const messagesDisplay = document.getElementById('messages-display');
 
     const buyTokensWithTonBtn = document.getElementById('buy-tokens-with-ton-btn');
-    const depositAddressMessage = document.getElementById('deposit-address-message');
-    const gameTonAddressPlaceholder = document.getElementById('game-ton-address-placeholder');
     
-    const YOUR_GAME_RECEIVING_TON_ADDRESS = "UQCdA1_m4iiU6jKUaBMsvIoWfMLUzaRfggNg0sabGK-eV-SV";
+    const walletSelectionModal = document.getElementById('wallet-selection-modal');
+    const closeWalletModalBtn = document.getElementById('close-wallet-modal-btn');
+    const walletButtonsContainer = document.getElementById('wallet-buttons-container');
+    const walletModalMessage = document.getElementById('wallet-modal-message');
+
+    const GAME_RECEIVING_TON_ADDRESS = "UQCdA1_m4iiU6jKUaBMsvIoWfMLUzaRfggNg0sabGK-eV-SV";
 
     // --- Estado del Juego ---
     let petTokens = 0;
-    let petLevel = 0;
+    let evolutionLevel = 0;
     let evolutionBaseCost = 10;
     let currentEvolveCost = evolutionBaseCost;
     let currentEnergy = 100;
@@ -34,108 +38,114 @@ document.addEventListener('DOMContentLoaded', () => {
     const energyPerTap = 5;
     const energyRechargePerSecond = 1;
 
-    // --- Estado de Billetera (Simulado) ---
-    let isWalletConnected_Simulated = false;
-    let simulatedWalletAddress = "";
+    // --- TON Connect SDK Instancia ---
+    let tonConnector = null; 
+    const MY_APP_MANIFEST_URL = 'https://raw.githubusercontent.com/Nicolashcro/casino666/main/tonconnect-manifest.json';
 
     // --- INICIALIZACIÓN ---
-    function initGame() {
+    async function initGame() {
         updateDisplays();
-        loadSimulatedWalletState();
+        initTonConnect(); 
         setInterval(rechargeEnergy, 1000);
-        if(gameTonAddressPlaceholder) gameTonAddressPlaceholder.textContent = YOUR_GAME_RECEIVING_TON_ADDRESS;
-        
-        // Placeholder para lógica de Telegram Web App (si estás en ese entorno)
+
         if (window.Telegram && window.Telegram.WebApp) {
             try {
                 window.Telegram.WebApp.ready();
-                console.log("Telegram WebApp SDK detectado y listo.");
-            } catch (e) {
-                console.warn("Error al inicializar Telegram WebApp SDK:", e);
-            }
+                console.log("Telegram WebApp SDK detectado.");
+            } catch (e) { console.warn("Error Telegram WebApp SDK:", e); }
         } else {
             console.log("Telegram WebApp SDK no detectado.");
         }
-        console.log("Crypto Pets - Juego Inicializado (Versión Estable con Simulación)");
     }
 
-    // --- ACTUALIZACIÓN DE UI ---
-    function updateDisplays() {
-        if(petTokensDisplay) petTokensDisplay.textContent = Math.floor(petTokens);
-        if(petLevelDisplay) petLevelDisplay.textContent = petLevel;
-        if(evolveCostDisplay) evolveCostDisplay.textContent = Math.floor(currentEvolveCost);
-        if(energyValueDisplay) energyValueDisplay.textContent = Math.floor(currentEnergy);
-        if(energyMaxDisplay) energyMaxDisplay.textContent = maxEnergy;
-        if(energyFill) energyFill.style.width = `${(currentEnergy / maxEnergy) * 100}%`;
+    function initTonConnect() {
+        if (typeof TonConnectSDK === 'undefined') {
+            console.error("Error Crítico: TonConnectSDK no está cargado. Verifica el tag <script> en index.html.");
+            showMessage("Error SDK: No se pudo cargar. Intenta recargar.", "error");
+            disableTonButtons("Error SDK");
+            return;
+        }
 
-        const petEmojis = ['🐾', '🐶', '🐱', '🦊', '🐻', '🐼', '🦁', '🦄', '🐲', '🌟'];
-        if(petPlaceholder) petPlaceholder.textContent = petEmojis[petLevel % petEmojis.length];
+        if (!MY_APP_MANIFEST_URL || MY_APP_MANIFEST_URL.includes('URL_REAL_DE_TU_TONCONNECT-MANIFEST.JSON')) {
+            console.error("Error Crítico: 'MY_APP_MANIFEST_URL' en script.js no está configurada con la URL HTTPS pública de tu tonconnect-manifest.json.");
+            showMessage("Error Config: Manifiesto TON no configurado.", "error");
+            disableTonButtons("Error Config.");
+            return;
+        }
         
-        if(evolveBtn) evolveBtn.disabled = petTokens < currentEvolveCost;
-        if(buyTokensWithTonBtn) buyTokensWithTonBtn.disabled = !isWalletConnected_Simulated;
-    }
+        try {
+            tonConnector = new TonConnectSDK.TonConnect({ manifestUrl: MY_APP_MANIFEST_URL });
 
-    function showMessage(text, type = "info") { // type: "info", "success", "error"
-        if (!messagesDisplay) return;
-        messagesDisplay.textContent = text;
-        messagesDisplay.className = `message-${type}`; 
-        setTimeout(() => { if(messagesDisplay) messagesDisplay.textContent = ""; if(messagesDisplay) messagesDisplay.className = ""; }, 4000);
-    }
+            tonConnector.onStatusChange(walletInfo => {
+                if (walletInfo) { // Conectado
+                    const address = TonConnectSDK.toUserFriendlyAddress(walletInfo.account.address, walletInfo.account.chain === TonConnectSDK.CHAIN.TESTNET);
+                    const network = walletInfo.account.chain === TonConnectSDK.CHAIN.TESTNET ? "Testnet" : "Mainnet";
+                    
+                    console.log(`Billetera conectada: ${address} en ${network}`);
+                    console.log("WalletInfo completo:", walletInfo);
 
-    function showTapFeedback(event) {
-        const gameArea = document.getElementById('game-area');
-        if (!gameArea || !event) return;
+                    if(walletAddressDisplay) walletAddressDisplay.textContent = `<span class="math-inline">\{address\.substring\(0, 6\)\}\.\.\.</span>{address.substring(address.length - 4)}`;
+                    if(walletAddressDisplay) walletAddressDisplay.setAttribute('data-tooltip', `Billetera: ${address}`);
+                    if(walletNetworkDisplay) walletNetworkDisplay.textContent = `(${network})`;
+                    if(walletInfoDiv) walletInfoDiv.style.display = 'flex';
+                    if(connectWalletBtn) connectWalletBtn.textContent = 'Desconectar';
+                    if(buyTokensWithTonBtn) buyTokensWithTonBtn.disabled = false;
 
-        const feedback = document.createElement('div');
-        feedback.textContent = `+${tapValue}`;
-        feedback.classList.add('tap-feedback');
-        
-        const gameAreaRect = gameArea.getBoundingClientRect();
-        // Ajustar posición para que aparezca donde se hizo clic
-        feedback.style.left = `${event.clientX - gameAreaRect.left - (feedback.offsetWidth / 2)}px`; 
-        feedback.style.top = `${event.clientY - gameAreaRect.top - (feedback.offsetHeight / 2) - 10}px`; // Un poco arriba del clic
-        
-        document.getElementById('game-area').appendChild(feedback);
-        setTimeout(() => feedback.remove(), 950);
-    }
+                    localStorage.setItem('ton_wallet_connected_real_v2', 'true');
+                    closeWalletSelectionModal();
+                } else { // Desconectado
+                    console.log('Billetera desconectada.');
+                    if(walletInfoDiv) walletInfoDiv.style.display = 'none';
+                    if(connectWalletBtn) connectWalletBtn.textContent = 'Conectar Billetera';
+                    if(buyTokensWithTonBtn) buyTokensWithTonBtn.disabled = true;
+                    localStorage.removeItem('ton_wallet_connected_real_v2');
+                }
+            });
 
-    // --- LÓGICA DEL JUEGO ---
-    if (petImageContainer) {
-        petImageContainer.addEventListener('click', (event) => {
-            if (currentEnergy >= energyPerTap) {
-                currentEnergy -= energyPerTap;
-                petTokens += tapValue;
-                showTapFeedback(event);
-                updateDisplays();
-            } else {
-                showMessage("¡Sin energía!", "error");
-            }
-        });
-    }
+            // Intentar restaurar conexión
+            tonConnector.restoreConnection();
 
-    function rechargeEnergy() {
-        if (currentEnergy < maxEnergy) {
-            currentEnergy = Math.min(maxEnergy, currentEnergy + energyRechargePerSecond);
-            updateDisplays();
+        } catch (e) {
+            console.error("Error inicializando TonConnect:", e);
+            showMessage("Error al iniciar TON Connect. Revisa la consola.", "error");
+            disableTonButtons("Error Init TON");
         }
     }
 
-    if (evolveBtn) {
-        evolveBtn.addEventListener('click', () => {
-            if (petTokens >= currentEvolveCost) {
-                petTokens -= currentEvolveCost;
-                petLevel++;
-                currentEvolveCost = Math.floor(evolveBaseCost * Math.pow(1.2, petLevel));
-                updateDisplays();
-                showMessage(`¡Mascota evolucionada al Nivel ${petLevel}!`, "success");
+    function disableTonButtons(reason = "Error") {
+        if (connectWalletBtn) {
+            connectWalletBtn.textContent = reason;
+            connectWalletBtn.disabled = true;
+        }
+        if (buyTokensWithTonBtn) {
+            buyTokensWithTonBtn.disabled = true;
+        }
+    }
+    
+    // --- MANEJO DE BOTÓN DE CONEXIÓN/DESCONEXIÓN ---
+    if (connectWalletBtn) {
+        connectWalletBtn.addEventListener('click', async () => {
+            if (!tonConnector) {
+                showMessage("TON Connect no está listo.", "error");
+                return;
+            }
+            if (tonConnector.connected) {
+                try {
+                    await tonConnector.disconnect();
+                } catch (e) { console.error("Error al desconectar:", e); }
             } else {
-                showMessage("No tienes suficientes PetTokens.", "error");
+                // Mostrar modal con opciones de billetera
+                showWalletSelectionModal();
             }
         });
     }
 
-    // --- SIMULACIÓN DE BILLETERA TON (SIN SDK REAL) ---
-    function loadSimulatedWalletState() {
-        const connected = localStorage.getItem('sim_wallet_v4_connected') === 'true';
-        if (connected) {
-            isWalletConnected_
+    async function showWalletSelectionModal() {
+        if (!tonConnector || !walletSelectionModal || !walletButtonsContainer || !walletModalMessage) return;
+        
+        walletButtonsContainer.innerHTML = '<p>Cargando billeteras...</p>'; // Mensaje de carga
+        walletSelectionModal.style.display = 'flex';
+        walletModalMessage.textContent = "";
+
+        try {
+            const walletsList = await ton
