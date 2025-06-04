@@ -12,42 +12,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log("Botón 'Conectar Billetera TON' encontrado:", connectTonWalletBtn);
     console.log("Div 'ton-wallet-info' encontrado:", tonWalletInfoDiv);
 
-    // --- Tu API Key de TON (004a2...) NO se usa para TonConnectUI ---
-    // Esa clave es para interactuar con APIs de nodos TON (ej. Toncenter), no para la conexión de billetera cliente.
-
     // --- Configuración de TON Connect ---
     if (typeof TONConnectSDK === 'undefined') {
-        console.error("¡ERROR CRÍTICO: TONConnectSDK no está definido! Asegúrate de que el script del SDK se haya cargado antes que este script.");
-        showUIMessage("Error: No se pudo cargar el SDK de TON Connect.", "error");
+        console.error("¡ERROR CRÍTICO: TONConnectSDK no está definido! Asegúrate de que el script del SDK (<script src='https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js'></script>) se haya cargado ANTES que este script (script.js) en tu HTML.");
+        showUIMessage("Error: No se pudo cargar el SDK de TON Connect. Revisa la consola del navegador (F12) y la pestaña 'Network' para ver si 'tonconnect-sdk.min.js' se está cargando.", "error", 15000);
+        if (connectTonWalletBtn) connectTonWalletBtn.disabled = true; // Deshabilitar botón si el SDK falla
         return; // Detener la ejecución si el SDK no está
     }
 
-    const { TonConnectUI, THEME } = TONConnectSDK; // Acceder desde el SDK global
-    const manifestUrl = 'https://github.com/Nicolashcro/casino666/blob/main/tonconnect-manifest.json'; // ¡¡¡REEMPLAZA ESTA URL!!!
+    const { TonConnectUI, THEME } = TONConnectSDK;
+
+    // **USA UNA DE ESTAS URLs PARA TU MANIFESTURL, NO LA DE GITHUB.COM/BLOB/...**
+    // Opción A: Si usas GitHub Pages y el manifest está en la raíz de tu sitio publicado:
+    const manifestUrl = 'https://nicolashcro.github.io/casino666/tonconnect-manifest.json'; 
+    // Opción B: Si quieres usar el archivo raw directamente desde el repositorio (menos ideal para producción pero funciona para pruebas):
+    // const manifestUrl = 'https://raw.githubusercontent.com/Nicolashcro/casino666/main/tonconnect-manifest.json';
+    
     console.log("Usando manifestUrl:", manifestUrl);
 
     let tonConnectUI;
     try {
         tonConnectUI = new TonConnectUI({
             manifestUrl: manifestUrl,
-            // buttonRootId: 'ton-connect-button-container', // Descomenta si quieres que el SDK genere un botón
-            // language: 'es', // Opcional
-            // uiPreferences: { theme: THEME.DARK } // Opcional
         });
         console.log("TonConnectUI inicializado correctamente:", tonConnectUI);
     } catch (error) {
-        console.error("Error al inicializar TonConnectUI:", error);
-        showUIMessage("Error al inicializar la conexión con billetera TON. Revisa la consola.", "error");
+        console.error("Error al inicializar TonConnectUI. ¿Es la manifestUrl correcta y accesible? ¿El JSON del manifiesto es válido?", error);
+        showUIMessage("Error al inicializar conexión con billetera TON. Revisa la consola.", "error");
         return;
     }
 
-    const YOUR_TON_RECEIVING_ADDRESS = "UQCdA1_m4iiU6jKUaBMsvIoWfMLUzaRfggNg0sabGK-eV-SV";
+    // Reemplaza esta con TU dirección de billetera TON donde quieres recibir los pagos
+    const YOUR_TON_RECEIVING_ADDRESS = "UQCdA1_m4iiU6jKUaBMsvIoWfMLUzaRfggNg0sabGK-eV-SV"; 
     console.log("Dirección de recepción de pagos TON:", YOUR_TON_RECEIVING_ADDRESS);
-    if (YOUR_TON_RECEIVING_ADDRESS === "UQCdA1_m4iiU6jKUaBMsvIoWfMLUzaRfggNg0sabGK-eV-SV") {
-        console.warn("ADVERTENCIA: Debes configurar tu YOUR_TON_RECEIVING_ADDRESS.");
-        showUIMessage("Advertencia: Configura tu dirección de recepción de TON en el script.", "error", 10000);
-    }
-
+    // Eliminé la advertencia redundante aquí, ya que la dirección está hardcodeada por ahora.
 
     let userTonWalletInfo = null;
 
@@ -55,7 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (wallet) {
             userTonWalletInfo = wallet;
             console.log("Billetera TON conectada/actualizada:", wallet);
-            if (tonWalletAddressSpan) tonWalletAddressSpan.textContent = `${wallet.account.address.slice(0, 6)}...${wallet.account.address.slice(-4)}`;
+            if (tonWalletAddressSpan) tonWalletAddressSpan.textContent = `<span class="math-inline">\{wallet\.account\.address\.slice\(0, 6\)\}\.\.\.</span>{wallet.account.address.slice(-4)}`;
             if (tonNetworkSpan) tonNetworkSpan.textContent = wallet.account.chain === '-239' ? 'TON Mainnet' : (wallet.account.chain === '-3' ? 'TON Testnet' : `Red ID ${wallet.account.chain}`);
             if (tonWalletInfoDiv) tonWalletInfoDiv.style.display = 'block';
             if (connectTonWalletBtn) connectTonWalletBtn.textContent = 'Desconectar Billetera TON';
@@ -75,35 +73,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     console.log("Suscribiéndose a cambios de estado de TON Connect...");
     tonConnectUI.onStatusChange(
-        wallet => {
-            console.log("Evento onStatusChange disparado. Wallet:", wallet);
-            updateUserWalletUI(wallet);
+        walletOrNull => { // El callback recibe la billetera o null
+            console.log("Evento onStatusChange disparado. Wallet:", walletOrNull);
+            updateUserWalletUI(walletOrNull);
         },
-        error => {
-            console.error("Error en la suscripción de estado de TON Connect (onStatusChange):", error);
-            showUIMessage("Error de conexión con billetera.", "error");
+        error => { // Este segundo callback es para errores durante la configuración de la suscripción, es raro que ocurra.
+            console.error("Error catastrófico en la suscripción de estado de TON Connect (onStatusChange):", error);
+            showUIMessage("Error crítico con la conexión de billetera.", "error");
         }
     );
-
-    // Restaurar conexión si existe
-    // Esto es asíncrono, pero el onStatusChange debería eventualmente actualizar la UI.
-    // No es estrictamente necesario esperar aquí si la UI se actualiza por el evento.
+    
+    // Intentar restaurar la conexión al cargar la página
+    // Esto es útil si el usuario ya había conectado y recarga la página.
     tonConnectUI.connectionRestored.then(restored => {
         console.log("Intento de restauración de conexión completado. Restaurada:", restored);
-        if (restored && tonConnectUI.wallet) {
-             console.log("Conexión restaurada con:", tonConnectUI.wallet);
-             // onStatusChange ya debería haber manejado esto, pero podemos forzar por si acaso.
-             // updateUserWalletUI(tonConnectUI.wallet);
-        } else if (tonConnectUI.wallet) {
-            // A veces el estado ya está presente sin que `connectionRestored` sea true explícitamente.
-            console.log("Conexión ya presente al cargar:", tonConnectUI.wallet);
-            // updateUserWalletUI(tonConnectUI.wallet);
-        } else {
-            console.log("No hay conexión para restaurar o ya está desconectada.");
-            updateUserWalletUI(null); // Asegurar UI limpia si no hay billetera
+        // onStatusChange se encarga de actualizar la UI si la conexión se restaura exitosamente.
+        // Si `tonConnectUI.wallet` ya tiene valor aquí, onStatusChange ya se habrá disparado o se disparará pronto.
+        if (!restored && !tonConnectUI.wallet) {
+            // Si no se restauró y no hay billetera, nos aseguramos que la UI esté en estado desconectado.
+            updateUserWalletUI(null);
         }
     }).catch(err => {
-        console.error("Error durante connectionRestored:", err);
+        // Este catch es para errores en la promesa `connectionRestored` misma, no para errores de conexión de usuario.
+        console.error("Error durante la promesa connectionRestored:", err);
     });
 
 
@@ -117,8 +109,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (tonConnectUI.connected) {
                 console.log("Intentando desconectar billetera...");
                 try {
-                    await tonConnectUI.disconnect();
-                    console.log("Desconexión solicitada."); // onStatusChange actualizará la UI
+                    await tonConnectUI.disconnect(); // Esto disparará onStatusChange con null
+                    console.log("Desconexión solicitada.");
                 } catch (error) {
                     console.error("Error durante tonConnectUI.disconnect():", error);
                     showUIMessage("Error al intentar desconectar.", "error");
@@ -126,7 +118,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 console.log("Abriendo modal de conexión de TON Connect...");
                 try {
-                    tonConnectUI.openModal();
+                    tonConnectUI.openModal(); // Muestra el popup para elegir billetera
                 } catch (error) {
                      console.error("Error durante tonConnectUI.openModal():", error);
                      showUIMessage("Error al abrir el modal de conexión.", "error");
@@ -140,16 +132,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (sendTonTransactionBtn) {
         sendTonTransactionBtn.addEventListener('click', async () => {
             console.log("Botón 'send-ton-payment-btn' clickeado.");
-            // ... (resto de la lógica de sendTonTransactionBtn como en la respuesta anterior)
             if (!tonConnectUI.connected || !userTonWalletInfo) {
                 showUIMessage("Conecta tu billetera TON primero.", "error");
                 return;
             }
-            if (!YOUR_TON_RECEIVING_ADDRESS || YOUR_TON_RECEIVING_ADDRESS === "TU_DIRECCION_DE_BILLETERA_TON_AQUI") {
-                showUIMessage("Error: Dirección de recepción no configurada.", "error");
-                console.error("CRÍTICO: YOUR_TON_RECEIVING_ADDRESS no está configurada.");
-                return;
-            }
+            // ... (lógica de transacción como antes, es correcta)
             const amountNanoTON = '100000000'; // 0.1 TON
             const transaction = {
                 validUntil: Math.floor(Date.now() / 1000) + 600, 
@@ -163,51 +150,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 showUIMessage(`Transacción enviada (BOC: ${result.boc.slice(0,10)}...). Esperando confirmación (simulada)...`, "success");
                 setTimeout(() => {
                     showUIMessage("¡Pago recibido y procesado (simulado)!", "success");
-                    if (tonConnectUI.connected) sendTonTransactionBtn.disabled = false; // Solo re-habilita si sigue conectado
+                    // Solo re-habilita si sigue conectado y no hay otra tx pendiente
+                    if (tonConnectUI.connected) sendTonTransactionBtn.disabled = false; 
                 }, 15000); 
             } catch (error) {
                 console.error("Error al enviar transacción TON:", error);
-                let errorMessage = "Error al enviar la transacción.";
-                if (error && typeof error === 'object' && 'message' in error) {
-                    if (error.message.includes('User rejected')) {
-                        errorMessage = "Transacción rechazada por el usuario.";
-                    } else if (error.message.length < 60) {
-                        errorMessage = `Error: ${error.message}`;
-                    }
-                }
-                showUIMessage(errorMessage, "error");
-                 if (tonConnectUI.connected) sendTonTransactionBtn.disabled = false;
-            }
-        });
-    } else {
-         console.error("No se encontró el botón con ID 'send-ton-payment-btn'.");
-    }
-
-
-    function showUIMessage(text, type = "info", duration = 5000) {
-        if (!messagesDisplay) {
-            console.warn("Elemento messagesDisplay no encontrado para mostrar mensaje:", text);
-            return;
-        }
-        // console.log(`Mostrando UI Mensaje [${type}]: ${text}`); // Descomenta si quieres ver todos los mensajes en consola
-        messagesDisplay.textContent = text;
-        messagesDisplay.className = `message-${type}`;
-        setTimeout(() => { 
-            if(messagesDisplay && messagesDisplay.textContent === text) {
-                messagesDisplay.textContent = ""; 
-                messagesDisplay.className = ""; 
-            }
-        }, duration);
-    }
-    
-    // --- Lógica del juego (simplificada) ---
-    // ... (tu lógica de petTokens, level, etc.)
-    let petTokens = 0; // Ejemplo
-    const petTokensDisplay = document.getElementById('pet-tokens-balance'); // Ejemplo
-    function updateDisplays() { // Ejemplo
-        if(petTokensDisplay) petTokensDisplay.textContent = String(Math.floor(petTokens));
-    }
-    updateDisplays(); // Llamada inicial ejemplo
-
-    console.log("Script.js finalizado. Esperando interacciones del usuario.");
-});
+                let errorMessage = "Error al enviar la transacción
