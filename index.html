@@ -3,40 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Cute Crypto Pet Tapper</title>
+    <title>Crypto Pets - Tap & Evolve!</title>
+    
+    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+
     <link rel="stylesheet" href="style.css">
     </head>
 <body>
-    <div id="game-area">
-        <div id="header">
-            <div id="balance">PetTokens: <span id="pet-tokens">0</span></div>
-            <div id="wallet-connect-area">
-                <button id="connect-wallet-btn">Conectar Billetera TON</button>
-                <div id="wallet-details" style="display: none;">
-                    <span id="wallet-address-placeholder"></span>
+    <div id="game-container">
+        <header id="game-header">
+            <div id="currency-display">
+                <span class="currency">PetTokens: <span id="pet-tokens-balance">0</span></span>
+            </div>
+            <div id="wallet-section">
+                <button id="connect-wallet-btn">Conectar Billetera</button>
+                <div id="wallet-info" style="display: none;">
+                    <span id="wallet-address"></span>
+                    <span id="wallet-network"></span>
                 </div>
             </div>
-        </div>
+        </header>
 
-        <div id="pet-zone">
-            <div id="pet-visual" title="¡Toca para ganar!">🧸</div>
-            <p>Nivel de Mascota: <span id="pet-level">0</span></p>
-        </div>
+        <main id="main-game-area">
+            <div id="pet-display-area">
+                <div id="pet-image-container" title="¡Toca para ganar PetTokens!">
+                    <div id="pet-placeholder">🐾</div> 
+                    </div>
+                <p id="pet-name">Mascota Nivel <span id="pet-evolution-level">0</span></p>
+            </div>
 
-        <div id="action-zone">
-            <div id="energy-display">Energía: <span id="energy-value">100</span>/100</div>
-            <button id="evolve-btn">Evolucionar (Costo: <span id="evolve-cost">10</span> PetTokens)</button>
-        </div>
+            <div id="tap-controls">
+                <div id="energy-bar-container">
+                    Energía: <div id="energy-bar"><div id="energy-fill"></div></div>
+                    <span id="energy-value">100</span>/<span id="energy-max">100</span>
+                </div>
+            </div>
+            
+            <div id="evolution-section">
+                <button id="evolve-button">Evolucionar</button>
+                <p>Costo: <span id="evolution-cost">10</span> PetTokens</p>
+            </div>
+
+            <div id="payment-section">
+                <p>Comprar 1000 PetTokens (0.1 TON)</p>
+                <button id="buy-tokens-with-ton-btn">Comprar con TON</button>
+            </div>
+            
+            <div id="messages">
+                </div>
+        </main>
         
-        <div id="payment-simulation-zone">
-            <p>Depositar TON para comprar PetTokens:</p>
-            <button id="deposit-ton-btn">Depositar 0.1 TON (Simulado)</button>
-            <p id="deposit-address-message" style="display:none; margin-top:10px; font-size:0.8em;">
-                Simulación: Envía TON a:<br><strong id="game-ton-address-placeholder">TU_DIRECCION_TON_AQUI</strong>
-            </p>
-        </div>
-
-        <div id="messages"></div>
+        <footer>
+             <p>Crypto Pets - Tap & Evolve!</p>
+        </footer>
     </div>
 
     <script src="script.js"></script>
