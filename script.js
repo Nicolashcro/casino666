@@ -1,10 +1,11 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // --- Selectores del DOM ---
     const petTokensDisplay = document.getElementById('pet-tokens-balance');
-    const connectWalletBtn = document.getElementById('connect-wallet-btn');
+    const connectMetaMaskBtn = document.getElementById('connect-metamask-btn');
     const walletInfoDiv = document.getElementById('wallet-info');
-    const walletAddressDisplay = document.getElementById('wallet-address');
-    const walletNetworkDisplay = document.getElementById('wallet-network');
+    const walletAddressPlaceholder = document.getElementById('wallet-address-placeholder');
+    const walletTypeDisplay = document.getElementById('wallet-type-display');
+    const networkNameDisplay = document.getElementById('network-name-display');
     
     const petImageContainer = document.getElementById('pet-image-container');
     const petPlaceholder = document.getElementById('pet-placeholder');
@@ -18,186 +19,285 @@ document.addEventListener('DOMContentLoaded', () => {
     const evolveCostDisplay = document.getElementById('evolution-cost');
     const messagesDisplay = document.getElementById('messages-display');
 
-    const buyTokensWithTonBtn = document.getElementById('buy-tokens-with-ton-btn');
+    const buyTokensBtn = document.getElementById('buy-tokens-btn');
+    const paymentInfoMessage = document.getElementById('payment-info-message');
     
-    const GAME_RECEIVING_TON_ADDRESS = "UQCdA1_m4iiU6jKUaBMsvIoWfMLUzaRfggNg0sabGK-eV-SV";
+    // Dirección EVM del juego para recibir pagos (REEMPLAZA CON LA TUYA REAL DE TESTNET PRIMERO)
+    const YOUR_GAME_RECEIVING_EVM_ADDRESS = "TU_DIRECCION_EVM_PARA_RECIBIR_PAGOS_AQUI"; 
 
     // --- Estado del Juego ---
     let petTokens = 0;
-    let evolutionLevel = 0;
+    let petLevel = 0;
     let evolutionBaseCost = 10;
-    let currentEvolutionCost = evolutionBaseCost;
+    let currentEvolveCost = evolutionBaseCost;
     let currentEnergy = 100;
     const maxEnergy = 100;
     const tapValue = 1;
     const energyPerTap = 5;
     const energyRechargePerSecond = 1;
 
-    // --- TON Connect UI Instancia ---
-    let tonConnectUI = null; 
-    // **IMPORTANTE**: URL a tu archivo tonconnect-manifest.json alojado en HTTPS
-    const MY_APP_MANIFEST_URL = 'https://raw.githubusercontent.com/Nicolashcro/casino666/main/tonconnect-manifest.json';
+    // --- Estado de Billetera MetaMask ---
+    let currentAccount = null;
+    let currentChainId = null;
 
     // --- INICIALIZACIÓN ---
-    function initGame() {
-        console.log("Iniciando Crypto Pets...");
-        updateDisplays(); // Actualizar UI del juego base
-        initTonConnect(); // Intentar inicializar TON Connect
+    async function initGame() {
+        updateDisplays();
         setInterval(rechargeEnergy, 1000);
-
-        // Lógica de Telegram Web App (si aplica)
-        if (window.Telegram && window.Telegram.WebApp) {
+        
+        if (typeof window.ethereum !== 'undefined') {
+            console.log('MetaMask (o compatible) detectado.');
+            // Intentar obtener cuentas si ya está conectado y permitido
             try {
-                window.Telegram.WebApp.ready();
-                console.log("Telegram WebApp SDK detectado.");
-            } catch (e) { console.warn("Error Telegram WebApp SDK:", e); }
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                if (accounts.length > 0) {
+                    handleAccountsChanged(accounts);
+                }
+            } catch (err) {
+                console.warn("Error al obtener cuentas iniciales:", err);
+            }
+
+            window.ethereum.on('accountsChanged', handleAccountsChanged);
+            window.ethereum.on('chainChanged', handleChainChanged);
         } else {
-            console.log("Telegram WebApp SDK no detectado.");
-        }
-        console.log("Crypto Pets - Juego Inicializado.");
-    }
-
-    function initTonConnect() {
-        // **VERIFICACIÓN CRUCIAL DEL SDK**
-        if (typeof TON_CONNECT_UI === 'undefined' || typeof TON_CONNECT_UI.TonConnectUI === 'undefined') {
-            console.error("Error Crítico: TON_CONNECT_UI no está definido. Asegúrate de que el script del SDK <script src='https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js'></script> esté en tu index.html y se cargue correctamente ANTES que este script.");
-            showMessage("Error SDK: No se pudo cargar. Funcionalidad de billetera deshabilitada.", "error");
-            disableTonFunctionality("Error SDK");
-            return;
-        }
-
-        if (!MY_APP_MANIFEST_URL || MY_APP_MANIFEST_URL.includes('URL_REAL_DE_TU_TONCONNECT-MANIFEST.JSON') || MY_APP_MANIFEST_URL.includes('URL_RAIZ_DE_TU_JUEGO')) {
-            console.error("Error Crítico: La 'MY_APP_MANIFEST_URL' en script.js no está configurada correctamente. Debe ser la URL HTTPS pública de tu archivo tonconnect-manifest.json (contenido raw).");
-            showMessage("Error Config: Manifiesto TON no configurado.", "error");
-            disableTonFunctionality("Error Config.");
-            return;
+            showMessage("MetaMask no detectado. Por favor, instala MetaMask.", "error");
+            if(connectMetaMaskBtn) connectMetaMaskBtn.textContent = "Instalar MetaMask";
+            if(connectMetaMaskBtn) connectMetaMaskBtn.disabled = true;
+            if(buyTokensBtn) buyTokensBtn.disabled = true;
         }
         
-        try {
-            console.log("Inicializando TON Connect UI con manifest:", MY_APP_MANIFEST_URL);
-            tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-                manifestUrl: MY_APP_MANIFEST_URL,
-                // buttonRootId: 'ton-connect-button-placeholder', // Descomenta si quieres que el SDK cree su botón
-                uiPreferences: {
-                    theme: 'SYSTEM', // THEME.DARK, THEME.LIGHT
-                    borderRadius: 'm',
-                },
-                actionsConfiguration: { // Necesario para redirecciones correctas en TWA
-                    twaReturnUrl: `https://t.me/${window.Telegram?.WebApp?.initDataUnsafe?.bot?.username || 'tu_bot_o_app_name'}`
-                }
-            });
-            console.log("TON Connect UI inicializado.");
+        console.log("Crypto Pets - Juego Inicializado (MetaMask)");
+    }
 
-            // Suscribirse a cambios de estado para actualizar la UI
-            tonConnectUI.onStatusChange(wallet => { // wallet puede ser null o WalletInfo
-                if (wallet) {
-                    handleWalletConnected(wallet);
-                } else {
-                    handleWalletDisconnected();
-                }
-            });
-            // No es necesario llamar a restoreConnection manualmente con TonConnectUI,
-            // usualmente lo maneja internamente o a través de su botón/estado.
-            // Pero si hay un botón del SDK, él se encarga de la restauración.
-            // Si manejamos nuestro propio botón, el estado se reflejará en onStatusChange.
+    // --- ACTUALIZACIÓN DE UI ---
+    function updateDisplays() {
+        // ... (lógica de updateDisplays para PetTokens, Nivel, Energía, EvolveBtn como antes) ...
+        if(petTokensDisplay) petTokensDisplay.textContent = Math.floor(petTokens);
+        if(petLevelDisplay) petLevelDisplay.textContent = petLevel;
+        if(evolveCostDisplay) evolveCostDisplay.textContent = Math.floor(currentEvolveCost);
+        if(energyValueDisplay) energyValueDisplay.textContent = Math.floor(currentEnergy);
+        if(energyMaxDisplay) energyMaxDisplay.textContent = maxEnergy;
+        if(energyFill) energyFill.style.width = `${(currentEnergy / maxEnergy) * 100}%`;
 
-        } catch (e) {
-            console.error("Error fatal inicializando TonConnectUI:", e);
-            showMessage("Error crítico al iniciar TON Connect. Revisa la consola.", "error");
-            disableTonFunctionality("Error Init SDK");
+        const petEmojis = ['🐾', '🐶', '🐱', '🦊', '🐻', '🐼', '🦁', '🦄', '🐲', '🌟'];
+        if(petPlaceholder) petPlaceholder.textContent = petEmojis[petLevel % petEmojis.length];
+        
+        if(evolveBtn) evolveBtn.disabled = petTokens < currentEvolveCost;
+        if(buyTokensBtn) buyTokensBtn.disabled = !currentAccount; // Habilitar si hay una cuenta conectada
+    }
+
+    function updateWalletUI() {
+        if (currentAccount) {
+            if(walletAddressPlaceholder) walletAddressPlaceholder.textContent = `${currentAccount.substring(0, 6)}...${currentAccount.substring(currentAccount.length - 4)}`;
+            if(walletAddressPlaceholder) walletAddressPlaceholder.setAttribute('data-tooltip', `Dirección: ${currentAccount}`);
+            if(walletTypeDisplay) walletTypeDisplay.textContent = "MetaMask"; // O nombre de la billetera si se puede obtener
+            if(networkNameDisplay) networkNameDisplay.textContent = getNetworkName(currentChainId);
+            if(walletInfoDiv) walletInfoDiv.style.display = 'block';
+            if(connectMetaMaskBtn) connectMetaMaskBtn.textContent = 'Desconectar'; // O simplemente ocultarlo
+        } else {
+            if(walletInfoDiv) walletInfoDiv.style.display = 'none';
+            if(connectMetaMaskBtn) connectMetaMaskBtn.textContent = 'Conectar MetaMask';
+            if(networkNameDisplay) networkNameDisplay.textContent = 'Desconectado';
         }
-    }
-    
-    function disableTonFunctionality(reason = "Error") {
-        if (connectWalletBtn) {
-            connectWalletBtn.textContent = reason;
-            connectWalletBtn.disabled = true;
-        }
-        if (buyTokensWithTonBtn) {
-            buyTokensWithTonBtn.textContent = "Billetera no disp.";
-            buyTokensWithTonBtn.disabled = true;
-        }
+        if(buyTokensBtn) buyTokensBtn.disabled = !currentAccount;
     }
 
-    function handleWalletConnected(walletInfo) {
-        // walletInfo es un objeto del tipo Wallet o WalletInfoRemote, etc.
-        // Contiene walletInfo.account (address, chain, publicKey, walletStateInit)
-        // y walletInfo.device (platform, appName, etc.)
-        const addressRaw = walletInfo.account.address;
-        // El SDK principal (TonConnectSDK) tiene la utilidad toUserFriendlyAddress,
-        // @tonconnect/ui podría no exponerla directamente así.
-        // Asumiremos que la dirección ya viene en un formato usable o que la podemos mostrar raw.
-        // Para la versión de cadena: TonConnectSDK.CHAIN.MAINNET o TonConnectSDK.CHAIN.TESTNET (-239 o -3)
-        const isTestnet = walletInfo.account.chain === '-3'; 
-        // El SDK TonConnectUI devuelve la dirección en formato "user-friendly" directamente en algunos casos
-        // o puedes necesitar convertirla si tienes el SDK @tonconnect/sdk también.
-        // Por ahora, asumamos que addressRaw es usable o la mostramos como viene (raw).
-        const displayAddress = (typeof TonConnectSDK !== 'undefined' && TonConnectSDK.toUserFriendlyAddress) 
-                               ? TonConnectSDK.toUserFriendlyAddress(addressRaw, isTestnet) 
-                               : addressRaw;
+    function showUIMessage(text, type = "info") { /* ... como antes ... */ }
+    function showTapFeedback(event) { /* ... como antes ... */ }
 
-        console.log(`Billetera conectada: ${displayAddress}`);
-        console.log("Info de billetera completa:", walletInfo);
-
-        if(walletAddressDisplay) walletAddressDisplay.textContent = `<span class="math-inline">\{displayAddress\.substring\(0, 6\)\}\.\.\.</span>{displayAddress.substring(displayAddress.length - 4)}`;
-        if(walletAddressDisplay) walletAddressDisplay.setAttribute('data-tooltip', `Billetera: ${displayAddress}`);
-        if(walletNetworkDisplay) walletNetworkDisplay.textContent = `(${isTestnet ? "Testnet" : "Mainnet"})`;
-        if(walletInfoDiv) walletInfoDiv.style.display = 'flex';
-        if(connectWalletBtn) connectWalletBtn.textContent = 'Desconectar';
-        if(buyTokensWithTonBtn) buyTokensWithTonBtn.disabled = false;
-    }
-
-    function handleWalletDisconnected() {
-        console.log('Billetera desconectada por el SDK.');
-        if(walletInfoDiv) walletInfoDiv.style.display = 'none';
-        if(connectWalletBtn) connectWalletBtn.textContent = 'Conectar Billetera';
-        if(buyTokensWithTonBtn) buyTokensWithTonBtn.disabled = true;
-    }
-    
-    // --- MANEJO DE BOTÓN DE CONEXIÓN/DESCONEXIÓN ---
-    if (connectWalletBtn) {
-        connectWalletBtn.addEventListener('click', async () => {
-            if (!tonConnectUI) {
-                showMessage("Error: TON Connect no está inicializado.", "error");
-                return;
-            }
-            // @tonconnect/ui maneja su propio modal y estados de conexión/desconexión
-            // Si está conectado, el botón del SDK usualmente muestra para desconectar.
-            // Si no está conectado, muestra para conectar.
-            // Con un botón personalizado, le pedimos que abra su modal de conexión o que se desconecte.
-            if (tonConnectUI.connected) {
-                try {
-                    await tonConnectUI.disconnect();
-                    // onStatusChange se encargará de actualizar la UI.
-                } catch (e) {
-                    console.error("Error al desconectar:", e);
-                    showMessage("Error al desconectar la billetera.", "error");
-                }
+    // --- LÓGICA DEL JUEGO (Tap to Earn, Evolución) ---
+    if (petImageContainer) { /* ... como antes ... */ }
+    function rechargeEnergy() { /* ... como antes ... */ }
+    if (evolveBtn) { /* ... como antes ... */ }
+    // (Pega aquí las funciones completas de showUIMessage, showTapFeedback, el listener de petImageContainer, rechargeEnergy, y el listener de evolveBtn de la respuesta anterior)
+    if (petImageContainer) {
+        petImageContainer.addEventListener('click', (event) => {
+            if (currentEnergy >= energyPerTap) {
+                currentEnergy -= energyPerTap;
+                petTokens += tapValue;
+                showTapFeedback(event);
+                updateDisplays();
             } else {
-                tonConnectUI.openModal(); // Esto abrirá el modal de @tonconnect/ui para conectar
+                showUIMessage("¡Sin energía!", "error");
             }
         });
     }
+    function rechargeEnergy() {
+        if (currentEnergy < maxEnergy) {
+            currentEnergy = Math.min(maxEnergy, currentEnergy + energyRechargePerSecond);
+            updateDisplays();
+        }
+    }
+    if (evolveBtn) {
+        evolveBtn.addEventListener('click', () => {
+            if (petTokens >= currentEvolveCost) {
+                petTokens -= currentEvolveCost;
+                petLevel++;
+                currentEvolveCost = Math.floor(evolutionBaseCost * Math.pow(1.2, petLevel));
+                updateDisplays();
+                showUIMessage(`¡Mascota evolucionada al Nivel ${petLevel}!`, "success");
+            } else {
+                showUIMessage("No tienes suficientes PetTokens.", "error");
+            }
+        });
+    }
+     function showUIMessage(text, type = "info") {
+        if (!messagesDisplay) return;
+        messagesDisplay.textContent = text;
+        messagesDisplay.className = `message-${type}`;
+        messagesDisplay.style.color = type === "error" ? '#dc3545' : type === "success" ? '#28a745' : '#007bff';
+        setTimeout(() => { if(messagesDisplay) messagesDisplay.textContent = ""; if(messagesDisplay) messagesDisplay.className = ""; }, 4000);
+    }
+    function showTapFeedback(event) {
+        const gameArea = document.getElementById('game-area');
+        if (!gameArea || !event) return;
+        const feedback = document.createElement('div');
+        feedback.textContent = `+${tapValue}`;
+        feedback.classList.add('tap-feedback');
+        const gameAreaRect = gameArea.getBoundingClientRect();
+        feedback.style.left = `${event.clientX - gameAreaRect.left - 10}px`;
+        feedback.style.top = `${event.clientY - gameAreaRect.top - 30}px`;
+        gameArea.appendChild(feedback);
+        setTimeout(() => feedback.remove(), 950);
+    }
 
-    // --- COMPRA DE TOKENS CON TON (TRANSACCIÓN REAL) ---
-    if (buyTokensWithTonBtn) {
-        buyTokensWithTonBtn.addEventListener('click', async () => {
-            if (!tonConnectUI || !tonConnectUI.connected) {
-                showMessage("Por favor, conecta tu billetera TON primero.", "error");
-                tonConnectUI?.openModal(); 
+
+    // --- LÓGICA DE BILLETERA METAMASK ---
+    async function connectMetaMask() {
+        if (typeof window.ethereum !== 'undefined') {
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                handleAccountsChanged(accounts);
+            } catch (error) {
+                if (error.code === 4001) { // EIP-1193 userRejectedRequest error
+                    showUIMessage("Conexión a MetaMask rechazada por el usuario.", "error");
+                } else {
+                    console.error("Error al conectar con MetaMask:", error);
+                    showUIMessage("Error al conectar con MetaMask.", "error");
+                }
+            }
+        } else {
+            showUIMessage("MetaMask no está instalado. Por favor, instala la extensión.", "error");
+            // Podrías redirigir a la página de descarga de MetaMask
+        }
+    }
+
+    function handleAccountsChanged(accounts) {
+        if (accounts.length === 0) {
+            console.log('MetaMask está bloqueado o no tiene cuentas conectadas.');
+            currentAccount = null;
+            showUIMessage("Por favor, conecta una cuenta en MetaMask.", "info");
+        } else if (accounts[0] !== currentAccount) {
+            currentAccount = accounts[0];
+            console.log('Cuenta cambiada/conectada:', currentAccount);
+            showUIMessage(`Billetera MetaMask conectada: ${currentAccount.substring(0,6)}...`, "success");
+            // Obtener Chain ID actual
+            window.ethereum.request({ method: 'eth_chainId' }).then(handleChainChanged).catch(console.error);
+        }
+        updateWalletUI();
+        updateDisplays(); // Para habilitar/deshabilitar botones dependientes
+    }
+
+    async function handleChainChanged(chainIdHex) {
+        currentChainId = chainIdHex;
+        console.log('Red cambiada a:', chainIdHex, `(${getNetworkName(chainIdHex)})`);
+        if(networkNameDisplay) networkNameDisplay.textContent = getNetworkName(chainIdHex);
+        showUIMessage(`Cambiado a red: ${getNetworkName(chainIdHex)}`, "info");
+    }
+
+    function getNetworkName(chainIdHex) {
+        if (!chainIdHex) return "Desconocida";
+        const chainId = parseInt(chainIdHex, 16);
+        switch (chainId) {
+            case 1: return 'Ethereum Mainnet';
+            case 5: return 'Goerli Testnet';
+            case 11155111: return 'Sepolia Testnet';
+            case 56: return 'BSC Mainnet';
+            case 97: return 'BSC Testnet';
+            case 137: return 'Polygon Mainnet';
+            case 80001: return 'Polygon Mumbai Testnet';
+            // Añade más redes según necesites
+            default: return `ChainID ${chainId}`;
+        }
+    }
+
+    if (connectMetaMaskBtn) {
+        connectMetaMaskBtn.addEventListener('click', () => {
+            if (currentAccount) {
+                // Simular desconexión (MetaMask no tiene un método de "desconexión" explícito desde la dApp)
+                // La dApp "olvida" la cuenta. El usuario se desconecta desde la extensión.
+                currentAccount = null;
+                currentChainId = null;
+                showUIMessage("Desconectado de MetaMask (simulado). Conecta de nuevo si es necesario.", "info");
+                updateWalletUI();
+                updateDisplays();
+            } else {
+                connectMetaMask();
+            }
+        });
+    }
+    
+    // --- LÓGICA DE PAGO CON METAMASK (Ejemplo para comprar PetTokens) ---
+    if (buyTokensBtn) {
+        buyTokensBtn.addEventListener('click', async () => {
+            if (!currentAccount) {
+                showUIMessage("Conecta tu billetera MetaMask primero.", "error");
+                connectMetaMask(); // Intentar conectar
+                return;
+            }
+            if (!YOUR_GAME_RECEIVING_EVM_ADDRESS || YOUR_GAME_RECEIVING_EVM_ADDRESS === "TU_DIRECCION_EVM_PARA_RECIBIR_PAGOS_AQUI") {
+                showUIMessage("Dirección de pago del juego no configurada.", "error");
+                console.error("Error: YOUR_GAME_RECEIVING_EVM_ADDRESS no está configurada en script.js");
                 return;
             }
 
-            const amountToPayTON = "0.1"; 
-            const amountInNanoTON = (parseFloat(amountToPayTON) * 1000000000).toString(); // Convertir a nanoTON manualmente si toNano no está en TonConnectUI
+            const amountToPayETH = "0.001"; // ¡Usa valores PEQUEÑOS y en TESTNET!
+            const amountInWei = (parseFloat(amountToPayETH) * 1e18).toString(16); // Convertir a Wei y luego a Hexadecimal
 
-            const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 360, // 6 minutos
-                messages: [ { address: GAME_RECEIVING_TON_ADDRESS, amount: amountInNanoTON } ]
+            const transactionParameters = {
+                // nonce: '0x00', // El nonce (número de transacción) normalmente lo gestiona MetaMask.
+                // gasPrice: '0x09184e72a000', // Opcional: precio del gas en Wei hexadecimal. Mejor dejar que MetaMask sugiera.
+                // gas: '0x2710', // Opcional: límite de gas en hexadecimal (ej: 21000 para transferencia simple). Mejor dejar que MetaMask sugiera.
+                to: YOUR_GAME_RECEIVING_EVM_ADDRESS,
+                from: currentAccount,
+                value: '0x' + amountInWei, // Cantidad en Wei, prefijada con 0x
+                // data: '0x...', // Opcional: para interactuar con contratos inteligentes
+                // chainId: '0x...', // Opcional: MetaMask usará la red activa. Es bueno verificarla.
             };
 
             try {
-                showMessage(`Enviando ${amountToPayTON} TON... Confirma en tu billetera.`, "info");
-                const result = await tonConnectUI.sendTransaction(transaction);
+                showUIMessage(`Solicitando ${amountToPayETH} ETH... Confirma en MetaMask.`, "info");
+                const txHash = await window.ethereum.request({
+                    method: 'eth_sendTransaction',
+                    params: [transactionParameters],
+                });
+                console.log("Transacción enviada, Hash:", txHash);
+                showUIMessage(`Transacción enviada: ${txHash.substring(0,10)}... Esperando confirmación.`, "info");
+
+                // **AQUÍ VA LA LÓGICA DE VERIFICACIÓN DEL BACKEND (CRUCIAL)**
+                // Necesitas un backend para:
+                // 1. Escuchar este txHash en la blockchain.
+                // 2. Esperar a que se mine y confirme (varias confirmaciones de bloque).
+                // 3. SOLO DESPUÉS de la confirmación, acreditar los PetTokens.
                 
-                console.log("Transacción enviada (BOC):", result.
+                // Para esta DEMO, simulamos éxito:
+                setTimeout(() => {
+                    petTokens += 1000;
+                    updateDisplays();
+                    showUIMessage("¡1000 PetTokens comprados con ETH! (Confirmación Simulada)", "success");
+                }, 20000); // Simular tiempo de confirmación en red (puede ser más largo)
+
+            } catch (error) {
+                console.error("Error al enviar transacción con MetaMask:", error);
+                if (error.code === 4001) {
+                    showUIMessage("Transacción rechazada por el usuario.", "error");
+                } else {
+                    showUIMessage("Error al enviar la transacción.", "error");
+                }
+            }
+        });
+    }
+    
+    // --- INICIALIZAR ---
+    initGame();
+});
