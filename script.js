@@ -20,10 +20,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const messagesDisplay = document.getElementById('messages-display');
 
     const buyTokensBtn = document.getElementById('buy-tokens-btn');
-    const paymentInfoMessage = document.getElementById('payment-info-message');
-    
-    // **IMPORTANTE**: Reemplaza esta dirección con tu dirección EVM donde quieres recibir los pagos (Testnet primero)
-    const YOUR_GAME_RECEIVING_EVM_ADDRESS = "0x0000000000000000000000000000000000000000"; // <-- ¡CAMBIA ESTO!
+        
+    // **IMPORTANTE**: Reemplaza esta dirección con tu dirección EVM real donde quieres recibir los pagos de prueba (Testnet primero)
+    const YOUR_GAME_RECEIVING_EVM_ADDRESS = "0x0000000000000000000000000000000000000000"; // <-- ¡CAMBIA ESTO A TU DIRECCIÓN DE TESTNET!
 
     // --- Estado del Juego ---
     let petTokens = 0;
@@ -42,50 +41,47 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- INICIALIZACIÓN DEL JUEGO Y METAMASK ---
     async function initGame() {
-        updateDisplays(); // Actualiza UI del juego base
-        setInterval(rechargeEnergy, 1000); // Inicia recarga de energía
+        console.log("Iniciando Crypto Pets (MetaMask)...");
+        updateDisplays();
+        setInterval(rechargeEnergy, 1000);
         
         if (typeof window.ethereum !== 'undefined') {
             console.log('MetaMask (o compatible) detectado.');
-            // Intentar obtener cuentas y chainId si ya está conectado y la dApp tiene permiso
+            
+            // Intentar obtener cuentas si ya está conectado y la dApp tiene permiso
             try {
                 const accounts = await window.ethereum.request({ method: 'eth_accounts' });
                 if (accounts && accounts.length > 0) {
-                    handleAccountsChanged(accounts); // Esto actualiza currentAccount y UI
-                    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-                    handleChainChanged(chainId); // Esto actualiza currentChainId y UI
+                    await handleAccountsChanged(accounts); // Esperar a que se resuelva
                 } else {
-                    updateWalletUI(); // Asegura que la UI muestre "desconectado"
+                    updateWalletUI(); // UI en estado desconectado
                 }
             } catch (err) {
-                console.warn("Error al intentar obtener cuentas/chainId iniciales de MetaMask:", err.message);
-                updateWalletUI(); // Estado desconectado en UI
+                console.warn("Error al obtener cuentas iniciales:", err.message || err);
+                updateWalletUI();
             }
 
-            // Configurar escuchadores para eventos de MetaMask
             window.ethereum.on('accountsChanged', handleAccountsChanged);
-            window.ethereum.on('chainChanged', handleChainChanged);
+            window.ethereum.on('chainChanged', handleChainChanged); // Recarga la página en cambio de red
 
         } else {
-            showUIMessage("MetaMask no detectado. Por favor, instala la extensión.", "error");
+            showUIMessage("MetaMask no detectado. Por favor, instala MetaMask.", "error");
             if(connectMetaMaskBtn) {
                 connectMetaMaskBtn.textContent = "Instalar MetaMask";
                 connectMetaMaskBtn.onclick = () => window.open('https://metamask.io/download/', '_blank');
-                // No deshabilitar, permitir que lleve a la página de descarga
             }
             if(buyTokensBtn) buyTokensBtn.disabled = true;
         }
-        
-        console.log("Crypto Pets - Juego Inicializado (MetaMask Real)");
+        console.log("Crypto Pets - Juego Inicializado.");
     }
 
     // --- FUNCIONES DE ACTUALIZACIÓN DE UI ---
     function updateDisplays() {
-        if(petTokensDisplay) petTokensDisplay.textContent = Math.floor(petTokens);
-        if(petLevelDisplay) petLevelDisplay.textContent = petLevel;
-        if(evolveCostDisplay) evolveCostDisplay.textContent = Math.floor(currentEvolveCost);
-        if(energyValueDisplay) energyValueDisplay.textContent = Math.floor(currentEnergy);
-        if(energyMaxDisplay) energyMaxDisplay.textContent = maxEnergy;
+        if(petTokensDisplay) petTokensDisplay.textContent = String(Math.floor(petTokens));
+        if(petLevelDisplay) petLevelDisplay.textContent = String(petLevel);
+        if(evolveCostDisplay) evolveCostDisplay.textContent = String(Math.floor(currentEvolveCost));
+        if(energyValueDisplay) energyValueDisplay.textContent = String(Math.floor(currentEnergy));
+        if(energyMaxDisplay) energyMaxDisplay.textContent = String(maxEnergy);
         if(energyFill) energyFill.style.width = `${(currentEnergy / maxEnergy) * 100}%`;
 
         const petEmojis = ['🐾', '🐶', '🐱', '🦊', '🐻', '🐼', '🦁', '🦄', '🐲', '🌟'];
@@ -96,15 +92,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function updateWalletUI() {
-        if (!walletInfoDiv || !connectMetaMaskBtn || !walletAddressPlaceholder || !walletTypeDisplay || !networkNameDisplay) return;
+        if (!walletInfoDiv || !connectMetaMaskBtn || !walletAddressPlaceholder || !walletTypeDisplay || !networkNameDisplay) {
+             console.warn("Algunos elementos de UI de billetera no encontrados en el DOM.");
+             return;
+        }
 
         if (currentAccount) {
-            walletAddressPlaceholder.textContent = `${currentAccount.substring(0, 6)}...${currentAccount.substring(currentAccount.length - 4)}`;
+            walletAddressPlaceholder.textContent = `<span class="math-inline">\{currentAccount\.substring\(0, 6\)\}\.\.\.</span>{currentAccount.substring(currentAccount.length - 4)}`;
             walletAddressPlaceholder.setAttribute('data-tooltip', `Dirección: ${currentAccount}`);
             walletTypeDisplay.textContent = "MetaMask";
             networkNameDisplay.textContent = getNetworkName(currentChainId);
             walletInfoDiv.style.display = 'block';
-            connectMetaMaskBtn.textContent = 'Desconectar'; // El usuario desconecta desde la extensión
+            connectMetaMaskBtn.textContent = 'Desconectar';
         } else {
             walletInfoDiv.style.display = 'none';
             connectMetaMaskBtn.textContent = 'Conectar MetaMask';
@@ -171,16 +170,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (typeof window.ethereum !== 'undefined') {
             try {
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                handleAccountsChanged(accounts); // Esta función actualiza currentAccount y la UI
-                
-                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-                handleChainChanged(chainId); // Esto actualiza currentChainId y la UI
+                // handleAccountsChanged se llamará automáticamente por el listener si la cuenta cambia,
+                // pero lo llamamos aquí para asegurar la actualización inmediata de la UI tras la conexión.
+                await handleAccountsChanged(accounts); 
             } catch (error) {
-                if (error.code === 4001) {
-                    showUIMessage("Conexión rechazada por el usuario.", "error");
+                if (error.code === 4001) { // EIP-1193 userRejectedRequest error
+                    showUIMessage("Conexión a MetaMask rechazada.", "error");
                 } else {
                     console.error("Error al conectar con MetaMask:", error);
-                    showUIMessage("Error al conectar. Revisa la consola.", "error");
+                    showUIMessage("Error al conectar con MetaMask.", "error");
                 }
             }
         } else {
@@ -189,27 +187,42 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    function handleAccountsChanged(accounts) {
+    async function handleAccountsChanged(accounts) {
         if (accounts.length === 0) {
             console.log('MetaMask desconectado o ninguna cuenta autorizada.');
             currentAccount = null;
         } else if (accounts[0] !== currentAccount) {
             currentAccount = accounts[0];
-            console.log('Cuenta MetaMask seleccionada:', currentAccount);
+            console.log('Cuenta MetaMask cambiada/conectada:', currentAccount);
+            // No mostrar mensaje aquí, ya que se muestra al conectar o se actualiza la UI
+        }
+        // Obtener Chain ID después de confirmar la cuenta
+        if (currentAccount && window.ethereum) {
+            try {
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                await handleChainChanged(chainId); // Esperar a que se procese el cambio de cadena
+            } catch (error) {
+                console.error("Error obteniendo chainId:", error);
+                currentChainId = null; // Resetear si hay error
+            }
+        } else {
+            currentChainId = null; // No hay cuenta, no hay chainId
         }
         updateWalletUI();
         updateDisplays(); 
     }
 
-    function handleChainChanged(_chainId) {
+    async function handleChainChanged(_chainId) { // Ahora asíncrona si tiene operaciones async dentro
         currentChainId = _chainId;
-        console.log('Red cambiada a:', _chainId, `(${getNetworkName(_chainId)})`);
-        updateWalletUI();
+        const network = getNetworkName(_chainId);
+        console.log('Red cambiada a:', network, `(ID: ${_chainId})`);
+        updateWalletUI(); // Esto actualizará el nombre de la red en la UI
     }
+
 
     function getNetworkName(chainIdHex) {
         if (!chainIdHex) return "N/A";
-        const chainId = parseInt(chainIdHex, 16);
+        const chainId = parseInt(String(chainIdHex), 16); // Asegurar que es string antes de parseInt
         switch (chainId) {
             case 1: return 'Ethereum Mainnet';
             case 5: return 'Goerli Testnet';
@@ -225,12 +238,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (connectMetaMaskBtn) {
         connectMetaMaskBtn.addEventListener('click', () => {
             if (currentAccount) {
-                // MetaMask no tiene un método de "desconexión" programático desde la dApp.
-                // La dApp simplemente deja de usar la cuenta.
-                // El usuario debe desconectar el sitio desde la extensión de MetaMask.
                 currentAccount = null;
                 currentChainId = null;
-                showUIMessage("Desconectado. Para desconectar completamente, hazlo desde MetaMask.", "info");
+                showUIMessage("Desconectado. Para reconectar, presiona el botón.", "info");
                 updateWalletUI();
                 updateDisplays();
             } else {
@@ -244,59 +254,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         buyTokensBtn.addEventListener('click', async () => {
             if (!currentAccount) {
                 showUIMessage("Conecta tu billetera MetaMask primero.", "error");
-                connectMetaMaskWallet();
+                await connectMetaMaskWallet(); // Intentar conectar si no está conectado
                 return;
             }
-            if (!YOUR_GAME_RECEIVING_EVM_ADDRESS || YOUR_GAME_RECEIVING_EVM_ADDRESS === "TU_DIRECCION_EVM_PARA_RECIBIR_PAGOS_AQUI") {
-                showUIMessage("La dirección de pago del juego no está configurada.", "error");
-                console.error("CRÍTICO: YOUR_GAME_RECEIVING_EVM_ADDRESS no está configurada en script.js");
+            if (!YOUR_GAME_RECEIVING_EVM_ADDRESS || YOUR_GAME_RECEIVING_EVM_ADDRESS === "0x0000000000000000000000000000000000000000" || YOUR_GAME_RECEIVING_EVM_ADDRESS === "TU_DIRECCION_EVM_PARA_RECIBIR_PAGOS_AQUI") {
+                showUIMessage("La dirección de pago del juego no está configurada correctamente.", "error");
+                console.error("CRÍTICO: YOUR_GAME_RECEIVING_EVM_ADDRESS no está configurada o es una dirección placeholder en script.js");
                 return;
             }
 
             const amountToPayETH_str = "0.001"; // ¡MANTÉN ESTO PEQUEÑO PARA PRUEBAS EN TESTNET!
-            const amountInWei_hex = '0x' + (parseFloat(amountToPayETH_str) * 1e18).toString(16);
-
+            const amountInWei = window.ethereum.networkVersion === '1' || window.ethereum.networkVersion === '56' || window.ethereum.networkVersion === '137' ? 
+                                (BigInt(parseFloat(amountToPayETH_str) * 1e18)).toString(16) : // Mainnets
+                                (BigInt(parseFloat(amountToPayETH_str) * 1e18)).toString(16); // Testnets (mismo cálculo de Wei)
+            
             const transactionParameters = {
                 to: YOUR_GAME_RECEIVING_EVM_ADDRESS,
-                from: currentAccount,
-                value: amountInWei_hex,
-                // chainId: currentChainId, // Opcional: MetaMask usará la red activa.
-                // Gas: MetaMask lo estimará, pero en producción podrías querer especificarlo.
-            };
-
-            try {
-                showUIMessage(`Solicitando ${amountToPayETH_str} ETH (Testnet)... Confirma en MetaMask.`, "info");
-                
-                const txHash = await window.ethereum.request({
-                    method: 'eth_sendTransaction',
-                    params: [transactionParameters],
-                });
-                
-                console.log("Transacción enviada, Hash:", txHash);
-                showUIMessage(`Transacción enviada: ${txHash.substring(0,10)}... Esperando confirmación de la red.`, "info");
-
-                // **AQUÍ NECESITAS UN BACKEND PARA VERIFICAR EL txHash EN LA BLOCKCHAIN**
-                // Y LUEGO ACREDITAR LOS PETTOKENS DE FORMA SEGURA.
-                // Para esta demo, simulamos éxito y acreditamos localmente:
-                setTimeout(() => {
-                    petTokens += 1000;
-                    updateDisplays();
-                    showUIMessage("¡1000 PetTokens comprados! (Confirmación Blockchain Simulada)", "success");
-                }, 20000); // Simular 20 segundos de espera
-
-            } catch (error) {
-                console.error("Error al enviar transacción con MetaMask:", error);
-                if (error.code === 4001) { // User rejected the request.
-                    showUIMessage("Transacción rechazada por el usuario.", "error");
-                } else if (error.message) {
-                    showUIMessage(`Error de transacción: ${error.message.substring(0,50)}...`, "error");
-                } else {
-                    showUIMessage("Error desconocido al enviar la transacción.", "error");
-                }
-            }
-        });
-    }
-    
-    // --- INICIALIZAR EL JUEGO ---
-    initGame();
-});
