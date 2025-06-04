@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const { TonConnectUI, THEME } = TONConnectSDK; // Acceder desde el SDK global
-    const manifestUrl = 'https://tu-usuario.github.io/tu-repositorio/tonconnect-manifest.json'; // ¡¡¡REEMPLAZA ESTA URL!!!
+    const manifestUrl = 'https://github.com/Nicolashcro/casino666/blob/main/tonconnect-manifest.json'; // ¡¡¡REEMPLAZA ESTA URL!!!
     console.log("Usando manifestUrl:", manifestUrl);
 
     let tonConnectUI;
@@ -41,9 +41,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    const YOUR_TON_RECEIVING_ADDRESS = "TU_DIRECCION_DE_BILLETERA_TON_AQUI";
+    const YOUR_TON_RECEIVING_ADDRESS = "UQCdA1_m4iiU6jKUaBMsvIoWfMLUzaRfggNg0sabGK-eV-SV";
     console.log("Dirección de recepción de pagos TON:", YOUR_TON_RECEIVING_ADDRESS);
-    if (YOUR_TON_RECEIVING_ADDRESS === "TU_DIRECCION_DE_BILLETERA_TON_AQUI") {
+    if (YOUR_TON_RECEIVING_ADDRESS === "UQCdA1_m4iiU6jKUaBMsvIoWfMLUzaRfggNg0sabGK-eV-SV") {
         console.warn("ADVERTENCIA: Debes configurar tu YOUR_TON_RECEIVING_ADDRESS.");
         showUIMessage("Advertencia: Configura tu dirección de recepción de TON en el script.", "error", 10000);
     }
