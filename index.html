@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Crypto Pets - Tap & Evolve! (MetaMask)</title>
+    <title>Crypto Pets - Tap & Evolve! (TON Connect)</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
 </head>
 <body>
     <div id="game-container">
@@ -12,12 +13,12 @@
             <div id="currency-display">
                 <span class="currency">PetTokens: <span id="pet-tokens-balance">0</span></span>
             </div>
-            <div id="wallet-section">
-                <button id="connect-metamask-btn">Conectar MetaMask</button>
-                <div id="wallet-info" style="display: none;">
-                    Conectado: <span id="wallet-type-display">MetaMask</span><br>
-                    <span id="wallet-address-placeholder" data-tooltip="Tu dirección de MetaMask"></span><br>
-                    Red: <span id="network-name-display">Desconocida</span>
+
+            <div id="ton-wallet-section">
+                <button id="connect-ton-wallet-btn">Conectar Billetera TON</button>
+                <div id="ton-wallet-info" style="display: none; font-size: 0.8em; margin-top: 5px;">
+                    Conectado: <span id="ton-wallet-address"></span><br>
+                    Red: <span id="ton-network"></span>
                 </div>
             </div>
         </header>
@@ -30,28 +31,16 @@
                 <p id="pet-name">Mascota Nivel <span id="pet-evolution-level">0</span></p>
             </div>
 
-            <div id="tap-controls">
-                <div id="energy-bar-container">
-                    Energía: <div id="energy-bar"><div id="energy-fill"></div></div>
-                    <span id="energy-value">100</span>/<span id="energy-max">100</span>
-                </div>
-            </div>
-            
-            <div id="evolution-section">
-                <button id="evolve-button">Evolucionar</button>
-                <p>Costo: <span id="evolution-cost">10</span> PetTokens</p>
-            </div>
-
             <div id="payment-section">
-                <p>Comprar 1000 PetTokens (ej: 0.001 ETH en Testnet)</p>
-                <button id="buy-tokens-btn" disabled>Comprar con ETH (Testnet)</button>
+                 <p>Comprar 1000 PetTokens (ej: 0.1 TON)</p>
+                 <button id="send-ton-payment-btn" disabled>Comprar con TON</button>
             </div>
             
             <div id="messages-display"></div>
         </main>
         
         <footer>
-             <p>Crypto Pets - Tap & Evolve!</p>
+             <p>Crypto Pets - Tap & Evolve! (TON)</p>
         </footer>
     </div>
 
