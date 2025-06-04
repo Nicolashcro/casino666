@@ -1,149 +1,165 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Selectores del DOM ---
+    // --- Selectores del DOM (como estaban) ---
     const petTokensBalanceDisplay = document.getElementById('pet-tokens-balance');
     const connectWalletBtn = document.getElementById('connect-wallet-btn');
     const walletInfoDisplay = document.getElementById('wallet-info');
     const walletAddressDisplay = document.getElementById('wallet-address');
-    const walletNetworkDisplay = document.getElementById('wallet-network');
+    const walletNetworkDisplay = document.getElementById('wallet-network'); // Para mostrar red
 
     const petImageContainer = document.getElementById('pet-image-container');
     const petEvolutionLevelDisplay = document.getElementById('pet-evolution-level');
-    // const petImage = document.getElementById('pet-image'); // Si usas <img> para la mascota
-
     const energyFill = document.getElementById('energy-fill');
     const energyValueDisplay = document.getElementById('energy-value');
     const energyMaxDisplay = document.getElementById('energy-max');
-
     const evolveButton = document.getElementById('evolve-button');
     const evolutionCostDisplay = document.getElementById('evolution-cost');
     const messagesDisplay = document.getElementById('messages');
+    // ... (otros selectores que tenías para Tap to Earn, Ruleta, etc. si los mantienes)
 
-    const tonConnectModal = document.getElementById('ton-connect-modal');
-    const closeModalButton = document.querySelector('#ton-connect-modal .close-button');
-    const walletOptionBtns = document.querySelectorAll('#ton-connect-modal .wallet-option-btn');
-    const modalMessage = document.getElementById('modal-message');
-
-    // --- Estado del Juego ---
+    // --- Estado del Juego (como estaba) ---
     let petTokens = 0;
     let evolutionLevel = 0;
     let evolutionBaseCost = 10;
     let currentEvolutionCost = 10;
-
     let currentEnergy = 100;
     const maxEnergy = 100;
-    const tapValue = 1; // PetTokens ganados por toque
-    const energyCostPerTap = 5; // Energía gastada por toque
-    const energyRechargeRate = 1; // Energía recuperada por segundo
-    const energyRechargeInterval = 1000; // 1 segundo
+    const tapValue = 1;
+    const energyCostPerTap = 5;
+    const energyRechargeRate = 1;
+    const energyRechargeInterval = 1000;
 
-    // --- Estado de Billetera TON (Simulado) ---
-    let isWalletConnected_simulated = false;
-    let simulatedTonAddress = "";
-    let simulatedTonNetwork = "";
+    // --- TON CONNECT SDK ---
+    let tonConnectUI = null; // Se inicializará después
+    const GAME_PAYMENT_ADDRESS_TON = "UQCdA1_m4iiU6jKUaBMsvIoWfMLUzaRfggNg0sabGK-eV-SV"; // Tu dirección de cobro
 
-    // --- INICIALIZACIÓN DEL JUEGO ---
+    // **IMPORTANTE**: Reemplaza esta URL con la URL real donde alojaste tu manifiesto
+    const MY_APP_MANIFEST_URL = 'https://github.com/Nicolashcro/casino666/blob/2ca8d6d283f4196b40ecb06657f909e807fae01f/tonconnect-manifest.json';
+
+    // --- INICIALIZACIÓN DEL JUEGO Y TON CONNECT ---
     function initGame() {
         updateDisplays();
-        loadSimulatedWalletState(); // Cargar estado de billetera guardado
+        initializeTonConnect(); // Inicializar TON Connect
         setInterval(rechargeEnergy, energyRechargeInterval);
-
-        // Activar pestaña por defecto (si tuvieras varias)
-        // Por ahora, es una sola pantalla principal
         console.log("Crypto Pets - Tap & Evolve: Inicializado!");
     }
 
-    // --- FUNCIONES DE ACTUALIZACIÓN DE UI ---
-    function updateDisplays() {
-        petTokensBalanceDisplay.textContent = Math.floor(petTokens);
-        petEvolutionLevelDisplay.textContent = evolutionLevel;
-        evolutionCostDisplay.textContent = Math.floor(currentEvolutionCost);
-        energyValueDisplay.textContent = Math.floor(currentEnergy);
-        energyMaxDisplay.textContent = maxEnergy;
-        energyFill.style.width = `${(currentEnergy / maxEnergy) * 100}%`;
+    function initializeTonConnect() {
+        if (typeof TonConnectSDK === 'undefined' || typeof TonConnectUI === 'undefined') {
+            console.error("TON Connect SDK o UI no está cargado. Asegúrate de incluir los scripts en tu HTML.");
+            showMessage("Error: Falta SDK de TON", "error");
+            if(connectWalletBtn) connectWalletBtn.disabled = true;
+            return;
+        }
 
-        // Actualizar imagen de mascota basada en evolutionLevel (aquí pondrías tu lógica de imágenes)
-        // Por ejemplo: petImage.src = `pets/pet_level_${evolutionLevel}.png`;
-        // O cambiar el contenido del placeholder:
-        const petPlaceholders = ['🐾', '🐶', '🐱', '🦊', '🐻', '🐼', '🦁', '🦄', '🐲', '🌟'];
-        document.getElementById('pet-placeholder').textContent = petPlaceholders[evolutionLevel % petPlaceholders.length];
+        if (MY_APP_MANIFEST_URL === 'URL_REAL_DE_TU_TONCONNECT-MANIFEST.JSON') {
+            console.error("FATAL: Debes configurar la 'MY_APP_MANIFEST_URL' en script.js con la URL real de tu archivo tonconnect-manifest.json alojado en HTTPS.");
+            showMessage("Error de Configuración: Falta URL del Manifiesto TON", "error");
+            if(connectWalletBtn) connectWalletBtn.disabled = true;
+            return;
+        }
+        
+        // Inicializar TonConnectUI
+        tonConnectUI = new TonConnectUI.TonConnectUI({
+            manifestUrl: MY_APP_MANIFEST_URL,
+            buttonRootId: null, // Usaremos nuestro propio botón
+            // language: 'es', // Opcional
+            // actionsConfiguration: { twaReturnUrl: 'https://t.me/your_bot_or_channel' } // Opcional para Telegram Web Apps
+        });
 
+        // Suscribirse a cambios de estado de la billetera
+        const unsubscribe = tonConnectUI.onStatusChange(
+            walletAndAccount => { // walletAndAccount puede ser null si se desconecta
+                if (walletAndAccount) {
+                    handleWalletConnected(walletAndAccount);
+                } else {
+                    handleWalletDisconnected();
+                }
+            }
+        );
 
-        if (petTokens < currentEvolutionCost) {
-            evolveButton.disabled = true;
+        // También puedes verificar si hay una conexión restaurada
+        checkRestoredConnection();
+    }
+    
+    async function checkRestoredConnection() {
+        if (!tonConnectUI) return;
+        // Pequeño retraso para dar tiempo al SDK a restaurar la conexión si es posible
+        await new Promise(resolve => setTimeout(resolve, 500)); 
+        if (tonConnectUI.connected) {
+            console.log("Conexión de billetera restaurada por el SDK.");
+            // El evento onStatusChange ya debería haberse disparado si hay una conexión.
+            // Si no, puedes obtener la billetera manualmente:
+            // const wallet = tonConnectUI.wallet;
+            // if (wallet) handleWalletConnected(wallet);
         } else {
-            evolveButton.disabled = false;
+            console.log("No hay conexión de billetera restaurada.");
+            updateSimulatedWalletUI(false); // Asegurar que la UI esté desconectada
         }
     }
 
-    function showMessage(text, type = "info") { // type puede ser "info", "error", "success"
-        messagesDisplay.textContent = text;
-        messagesDisplay.className = type; // Para aplicar estilos diferentes si quieres
-        setTimeout(() => {
-            messagesDisplay.textContent = "";
-            messagesDisplay.className = "";
-        }, 3000);
-    }
 
-    function showTapFeedback(value) {
-        const feedback = document.createElement('div');
-        feedback.classList.add('tap-value-feedback');
-        feedback.textContent = `+${value}`;
-        petImageContainer.appendChild(feedback); // Añadir al contenedor de la mascota
-        setTimeout(() => {
-            feedback.remove();
-        }, 750); // Duración de la animación CSS
-    }
+    function handleWalletConnected(walletInfo) {
+        // 'walletInfo' es el objeto que recibes del SDK cuando la conexión es exitosa.
+        // Basado en tu documentación de TON Connect (ConnectEventSuccess):
+        // walletInfo.account.address es la dirección raw (0:<hex>)
+        // walletInfo.account.chain es MAINNET o TESTNET
+        // walletInfo.account.publicKey
+        // walletInfo.account.walletStateInit
+        // walletInfo.device (appName, appVersion, etc.)
+        
+        const addressRaw = walletInfo.account.address;
+        const isTestnet = walletInfo.account.chain === TonConnectSDK.CHAIN.TESTNET; // Asumiendo que el SDK tiene esta constante
+                                                                                // O compara con "-3" para Testnet, "-239" para Mainnet como en tu doc
+        
+        // Convertir dirección raw a formato "user-friendly" (el SDK debería proveer esto)
+        // Para el ejemplo, usaré una función hipotética o la mostraré raw.
+        // @tonconnect/sdk sí tiene `TonConnectSDK.toUserFriendlyAddress(rawAddress, isTestnet)`
+        const userFriendlyAddress = TonConnectSDK.toUserFriendlyAddress(addressRaw, isTestnet);
 
-    // --- LÓGICA DE "TAP TO EARN" ---
-    if (petImageContainer) {
-        petImageContainer.addEventListener('click', () => {
-            if (currentEnergy >= energyCostPerTap) {
-                currentEnergy -= energyCostPerTap;
-                petTokens += tapValue;
-                showTapFeedback(tapValue);
-                updateDisplays();
-                // Podrías añadir una animación al tocar la mascota aquí
-            } else {
-                showMessage("¡Sin energía!", "error");
-            }
-        });
-    }
+        simulatedTonAddress = userFriendlyAddress; // Guardar la dirección real
+        simulatedTonNetwork = isTestnet ? "Testnet" : "Mainnet";
 
-    function rechargeEnergy() {
-        if (currentEnergy < maxEnergy) {
-            currentEnergy = Math.min(maxEnergy, currentEnergy + energyRechargeRate);
-            updateDisplays();
+        isWalletConnected_simulated = true; // Actualizar nuestro estado interno
+        localStorage.setItem('ton_wallet_connected_real', 'true');
+        localStorage.setItem('ton_wallet_address_real', userFriendlyAddress);
+        localStorage.setItem('ton_wallet_network_real', simulatedTonNetwork);
+        
+        console.log(`Billetera TON Conectada: ${userFriendlyAddress} (${simulatedTonNetwork})`);
+        console.log("Información del dispositivo de la billetera:", walletInfo.device);
+        
+        // Aquí podrías verificar las "features" soportadas por la billetera:
+        if (walletInfo.device.features.some(f => f.name === 'SendTransaction')) {
+            console.log("La billetera conectada soporta 'SendTransaction'.");
         }
+
+        // Si solicitaste 'ton_proof' y fue exitoso, aquí verificarías la prueba.
+        // const tonProofReply = walletInfo.connectItems?.find(item => item.name === 'ton_proof');
+        // if (tonProofReply && !tonProofReply.error) { /* ... verificar prueba ... */ }
+
+        updateSimulatedWalletUI(true, userFriendlyAddress, simulatedTonNetwork);
+        showMessage("¡Billetera TON conectada!", "success");
     }
 
-    // --- LÓGICA DE EVOLUCIÓN ---
-    if (evolveButton) {
-        evolveButton.addEventListener('click', () => {
-            if (petTokens >= currentEvolutionCost) {
-                petTokens -= currentEvolutionCost;
-                evolutionLevel++;
-                // El costo aumenta un 20% para la siguiente evolución
-                currentEvolutionCost *= 1.20; 
-                // currentEvolutionCost = Math.ceil(currentEvolutionCost); // Redondear hacia arriba si quieres enteros
-
-                showMessage(`¡Mascota evolucionada al Nivel ${evolutionLevel}!`, "success");
-                updateDisplays();
-                // Aquí podrías cambiar la imagen de la mascota
-                // petImage.src = `path_to_new_evolution_image_${evolutionLevel}.png`;
-            } else {
-                showMessage("¡No tienes suficientes PetTokens para evolucionar!", "error");
-            }
-        });
+    function handleWalletDisconnected() {
+        isWalletConnected_simulated = false;
+        simulatedTonAddress = "";
+        simulatedTonNetwork = "";
+        localStorage.removeItem('ton_wallet_connected_real');
+        localStorage.removeItem('ton_wallet_address_real');
+        localStorage.removeItem('ton_wallet_network_real');
+        console.log("Billetera TON Desconectada.");
+        updateSimulatedWalletUI(false);
+        showMessage("Billetera TON desconectada.", "info");
     }
-
-    // --- LÓGICA DE BILLETERA TON (SIMULADA) ---
-    function updateSimulatedWalletUI() {
-        if (isWalletConnected_simulated) {
-            walletInfoDisplay.style.display = 'block';
-            walletAddressDisplay.textContent = simulatedTonAddress.substring(0, 6) + "..." + simulatedTonAddress.substring(simulatedTonAddress.length - 4);
-            walletNetworkDisplay.textContent = `(${simulatedTonNetwork})`;
+    
+    function updateSimulatedWalletUI(isConnected, address = "", network = "") {
+        isWalletConnected_simulated = isConnected; // Actualiza el estado global
+        if (isConnected) {
+            walletInfoDisplay.style.display = 'flex'; // Mostrar información
+            walletAddressDisplay.textContent = address.substring(0, 6) + "..." + address.substring(address.length - 4);
+            walletAddressDisplay.setAttribute('data-tooltip', `Billetera: ${address}`);
+            walletNetworkDisplay.textContent = `(${network})`;
             connectWalletBtn.textContent = "Desconectar";
-            // Aquí, en una implementación real, obtendrías y mostrarías el saldo real de TON
         } else {
             walletInfoDisplay.style.display = 'none';
             walletAddressDisplay.textContent = "";
@@ -151,87 +167,178 @@ document.addEventListener('DOMContentLoaded', () => {
             connectWalletBtn.textContent = "Conectar Billetera TON";
         }
     }
-
-    function loadSimulatedWalletState() {
-        const connected = localStorage.getItem('ton_wallet_sim_connected') === 'true';
-        if (connected) {
-            isWalletConnected_simulated = true;
-            simulatedTonAddress = localStorage.getItem('ton_wallet_sim_address') || generateFakeSimulatedAddress();
-            simulatedTonNetwork = localStorage.getItem('ton_wallet_sim_network') || "Testnet (Sim.)";
-        }
-        updateSimulatedWalletUI();
+    
+    if (connectWalletBtn) {
+        connectWalletBtn.addEventListener('click', async () => {
+            if (!tonConnectUI) {
+                showMessage("SDK de TON no inicializado.", "error");
+                return;
+            }
+            if (tonConnectUI.connected) {
+                try {
+                    await tonConnectUI.disconnect(); // SDK maneja la desconexión
+                    // El evento onStatusChange se encargará de actualizar la UI
+                } catch (e) {
+                    console.error("Error al desconectar:", e);
+                    showMessage("Error al desconectar.", "error");
+                }
+            } else {
+                // El SDK @tonconnect/ui abre su propio modal para seleccionar billetera
+                // Puede que necesites configurar `tonConnectUI.uiOptions = { language: 'es', theme: 'SYSTEM' };` antes.
+                // El método para mostrar el modal puede variar, consulta la doc de @tonconnect/ui.
+                // Usualmente, el botón que genera el SDK (si usas buttonRootId) o una llamada directa abre el modal.
+                // Para un botón personalizado, a menudo se usa:
+                try {
+                    const walletsList = await tonConnectUI.getWallets(); // Opcional, para ver las billeteras
+                    console.log("Billeteras disponibles:", walletsList);
+                    tonConnectUI.openModal(); // Abre el modal de selección de billetera del SDK
+                } catch (e) {
+                    console.error("Error al abrir modal de conexión:", e);
+                    showMessage("Error al iniciar conexión.", "error");
+                }
+            }
+        });
     }
 
-    function saveSimulatedWalletState() {
-        localStorage.setItem('ton_wallet_sim_connected', isWalletConnected_simulated);
-        if (isWalletConnected_simulated) {
-            localStorage.setItem('ton_wallet_sim_address', simulatedTonAddress);
-            localStorage.setItem('ton_wallet_sim_network', simulatedTonNetwork);
-        } else {
-            localStorage.removeItem('ton_wallet_sim_address');
-            localStorage.removeItem('ton_wallet_sim_network');
+    // --- LÓGICA DE PAGO CON TON (ILUSTRATIVA) ---
+    if (evolveButton) { // Reutilicemos el botón de evolucionar para simular una acción que requiere pago
+        evolveButton.addEventListener('click', async () => {
+            if (!isWalletConnected_simulated || !tonConnectUI || !tonConnectUI.connected) {
+                showMessage("Conecta tu billetera TON para evolucionar con tokens reales.", "error");
+                // Opcional: intentar abrir el modal de conexión
+                // if (tonConnectUI && !tonConnectUI.connected) tonConnectUI.openModal();
+                return;
+            }
+
+            if (petTokens < currentEvolutionCost) {
+                 showMessage("¡No tienes suficientes PetTokens (del juego) para esta evolución!", "error");
+                 return;
+            }
+
+            // SIMULAREMOS QUE LA EVOLUCIÓN CUESTA UNA PEQUEÑA CANTIDAD DE TON REAL
+            const tonCostForEvolution = 0.01; // ¡Usa valores muy pequeños para pruebas en Testnet!
+            const amountNanoTON = TonConnectSDK.toNano(tonCostForEvolution.toString()).toString();
+
+            const transaction = {
+                validUntil: Math.floor(Date.now() / 1000) + 360, // Transacción válida por 6 minutos
+                messages: [
+                    {
+                        address: GAME_PAYMENT_ADDRESS_TON, // Tu dirección de cobro
+                        amount: amountNanoTON,
+                        // payload: "base64_encoded_comment_or_data" // Opcional
+                    }
+                ]
+            };
+
+            showMessage(`Enviando ${tonCostForEvolution} TON para la evolución...`, "info");
+
+            try {
+                // Este es el paso crucial donde el SDK pide al usuario confirmar en su billetera
+                const result = await tonConnectUI.sendTransaction(transaction);
+                
+                // 'result' contendrá el boc de la transacción enviada.
+                // NO significa que la transacción esté confirmada en la blockchain.
+                console.log("Transacción enviada al wallet, resultado (boc):", result.boc);
+                showMessage("Transacción enviada a la billetera. Esperando confirmación...", "info");
+
+                // **IMPORTANTE: PASO FALTANTE CRÍTICO PARA PRODUCCIÓN**
+                // Aquí es donde DEBERÍAS tener un backend que:
+                // 1. Reciba este 'boc' o la información de la transacción.
+                // 2. Lo envíe a la red TON (si el SDK no lo hizo por completo).
+                // 3. Monitoree la blockchain para confirmar que la transacción fue exitosa.
+                // 4. SOLO DESPUÉS de la confirmación en blockchain, tu backend debería
+                //    notificar al juego (o actualizar la base de datos del jugador)
+                //    para que se acredite la evolución.
+
+                // Para esta DEMO, simularemos una confirmación exitosa después de un tiempo:
+                setTimeout(() => {
+                    petTokens -= currentEvolutionCost; // Cobrar tokens del juego
+                    evolutionLevel++;
+                    currentEvolutionCost *= 1.20;
+                    showMessage(`¡Mascota evolucionada al Nivel ${evolutionLevel} con TON! (Confirmación Simulada)`, "success");
+                    updateDisplays();
+                }, 8000); // Simular 8 segundos de espera para "confirmación"
+
+            } catch (error) {
+                console.error("Error en sendTransaction:", error);
+                let userMessage = "Error al procesar el pago con TON.";
+                if (error.message && error.message.toLowerCase().includes('user declined') || (error.code && error.code === 300 /* User declined the transaction*/)) {
+                    userMessage = "Pago cancelado por el usuario.";
+                } else if (error.message) {
+                     // userMessage += " Detalles: " + error.message;
+                }
+                showMessage(userMessage, "error");
+            }
+        });
+    }
+
+
+    // --- FUNCIONES DE ACTUALIZACIÓN DE UI ---
+    function updateDisplays() {
+        if(petTokensBalanceDisplay) petTokensBalanceDisplay.textContent = Math.floor(petTokens);
+        if(petEvolutionLevelDisplay) petEvolutionLevelDisplay.textContent = evolutionLevel;
+        if(evolutionCostDisplay) evolutionCostDisplay.textContent = currentEvolutionCost.toFixed(2); // Mostrar decimales para el costo
+        if(energyValueDisplay) energyValueDisplay.textContent = Math.floor(currentEnergy);
+        if(energyMaxDisplay) energyMaxDisplay.textContent = maxEnergy;
+        if(energyFill) energyFill.style.width = `${(currentEnergy / maxEnergy) * 100}%`;
+
+        const petPlaceholders = ['🐾', '🐶', '🐱', '🦊', '🐻', '🐼', '🦁', '🦄', '🐲', '🌟']; // Más iconos
+        const petElem = document.getElementById('pet-placeholder');
+        if(petElem) petElem.textContent = petPlaceholders[evolutionLevel % petPlaceholders.length];
+        
+        if (evolveButton) {
+            evolveButton.disabled = petTokens < currentEvolutionCost || !isWalletConnected_simulated; 
+            // Deshabilitar si no hay suficientes tokens o billetera no conectada para la "compra" de evolución
+            if (!isWalletConnected_simulated) {
+                evolveButton.setAttribute('data-tooltip', 'Conecta tu billetera TON para evolucionar con TON');
+            } else if (petTokens < currentEvolutionCost) {
+                evolveButton.setAttribute('data-tooltip', 'Necesitas más PetTokens del juego');
+            } else {
+                evolveButton.removeAttribute('data-tooltip');
+            }
+        }
+    }
+
+    function showMessage(text, type = "info") {
+        if (!messagesDisplay) return;
+        messagesDisplay.textContent = text;
+        messagesDisplay.className = `message-${type}`; // Para estilos CSS: .message-info, .message-error, .message-success
+        setTimeout(() => {
+            if(messagesDisplay) messagesDisplay.textContent = "";
+            if(messagesDisplay) messagesDisplay.className = "";
+        }, 4000);
+    }
+
+    function showTapFeedback(value) { /* ... como antes ... */
+        const feedback = document.createElement('div');
+        feedback.classList.add('tap-value-feedback');
+        feedback.textContent = `+${value}`;
+        if(petImageContainer) petImageContainer.appendChild(feedback);
+        setTimeout(() => { feedback.remove(); }, 750);
+    }
+
+
+    // --- LÓGICA DE "TAP TO EARN" ---
+    if (petImageContainer) { /* ... como antes ... */
+        petImageContainer.addEventListener('click', () => {
+            if (currentEnergy >= energyCostPerTap) {
+                currentEnergy -= energyCostPerTap;
+                petTokens += tapValue;
+                showTapFeedback(tapValue);
+                updateDisplays();
+            } else {
+                showMessage("¡Sin energía!", "error");
+            }
+        });
+    }
+
+    function rechargeEnergy() { /* ... como antes ... */
+        if (currentEnergy < maxEnergy) {
+            currentEnergy = Math.min(maxEnergy, currentEnergy + energyRechargeRate);
+            updateDisplays();
         }
     }
     
-    function generateFakeSimulatedAddress() {
-        return "EQ_SIM_" + Array(40).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('');
-    }
-
-    if (connectWalletBtn) {
-        connectWalletBtn.addEventListener('click', () => {
-            if (isWalletConnected_simulated) {
-                // Simular desconexión
-                isWalletConnected_simulated = false;
-                showMessage("Billetera TON (Simulada) Desconectada", "info");
-            } else {
-                // Mostrar modal de conexión simulado
-                tonConnectModal.style.display = 'flex';
-                modalMessage.textContent = ""; // Limpiar mensajes anteriores del modal
-            }
-            saveSimulatedWalletState();
-            updateSimulatedWalletUI();
-        });
-    }
-
-    if (closeModalButton) {
-        closeModalButton.addEventListener('click', () => {
-            tonConnectModal.style.display = 'none';
-        });
-    }
-
-    walletOptionBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            // Simular conexión exitosa con la billetera seleccionada
-            isWalletConnected_simulated = true;
-            simulatedTonAddress = generateFakeSimulatedAddress(); // Nueva dirección simulada
-            simulatedTonNetwork = btn.dataset.walletName.includes("Tonkeeper") ? "Mainnet (Sim.)" : "Testnet (Sim.)";
-            
-            modalMessage.textContent = `Conectado a ${btn.dataset.walletName}!`;
-            modalMessage.style.color = "green";
-
-            saveSimulatedWalletState();
-            updateSimulatedWalletUI();
-
-            setTimeout(() => {
-                tonConnectModal.style.display = 'none';
-            }, 1500); // Cerrar modal después de un momento
-            
-            // Aquí es donde, en una implementación real, recibirías `ConnectEventSuccess`
-            // y manejarías el `payload` con `items` (como `TonAddressItemReply`), `device`, etc.
-            // Basado en la documentación que proporcionaste, harías algo como:
-            // const connectEventPayload = { items: [{ name: "ton_addr", address: simulatedTonAddress, network: "-3", publicKey: "...", walletStateInit: "..."}], device: { ... } };
-            // handleConnectEvent(connectEventPayload);
-            showMessage(`Billetera ${btn.dataset.walletName} conectada (Simulación).`, "success");
-        });
-    });
-
-    // Cierra el modal si se hace clic fuera del contenido
-    window.onclick = function(event) {
-        if (event.target == tonConnectModal) {
-            tonConnectModal.style.display = "none";
-        }
-    }
-
-    // --- Inicializar Juego ---
+    // --- INICIALIZAR TODO ---
     initGame();
 });
