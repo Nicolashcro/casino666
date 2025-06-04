@@ -1,344 +1,294 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // --- Selectores del DOM (como estaban) ---
+document.addEventListener('DOMContentLoaded', async () => {
+    // --- Selectores del DOM ---
     const petTokensBalanceDisplay = document.getElementById('pet-tokens-balance');
     const connectWalletBtn = document.getElementById('connect-wallet-btn');
     const walletInfoDisplay = document.getElementById('wallet-info');
     const walletAddressDisplay = document.getElementById('wallet-address');
-    const walletNetworkDisplay = document.getElementById('wallet-network'); // Para mostrar red
+    const walletNetworkDisplay = document.getElementById('wallet-network');
 
     const petImageContainer = document.getElementById('pet-image-container');
     const petEvolutionLevelDisplay = document.getElementById('pet-evolution-level');
+    const petPlaceholder = document.getElementById('pet-placeholder');
+    // const petImage = document.getElementById('pet-image');
+
     const energyFill = document.getElementById('energy-fill');
     const energyValueDisplay = document.getElementById('energy-value');
     const energyMaxDisplay = document.getElementById('energy-max');
+
     const evolveButton = document.getElementById('evolve-button');
     const evolutionCostDisplay = document.getElementById('evolution-cost');
     const messagesDisplay = document.getElementById('messages');
-    // ... (otros selectores que tenías para Tap to Earn, Ruleta, etc. si los mantienes)
+    const buyTokensWithTonBtn = document.getElementById('buy-tokens-with-ton-btn');
 
-    // --- Estado del Juego (como estaba) ---
+    // --- Dirección de Destino para Pagos TON ---
+    const GAME_RECEIVING_TON_ADDRESS = "UQCdA1_m4iiU6jKUaBMsvIoWfMLUzaRfggNg0sabGK-eV-SV";
+
+    // --- Estado del Juego ---
     let petTokens = 0;
     let evolutionLevel = 0;
     let evolutionBaseCost = 10;
-    let currentEvolutionCost = 10;
+    let currentEvolutionCost = evolutionBaseCost;
     let currentEnergy = 100;
     const maxEnergy = 100;
     const tapValue = 1;
     const energyCostPerTap = 5;
-    const energyRechargeRate = 1;
-    const energyRechargeInterval = 1000;
+    const energyRechargeRate = 1; // por segundo
 
-    // --- TON CONNECT SDK ---
-    let tonConnectUI = null; // Se inicializará después
-    const GAME_PAYMENT_ADDRESS_TON = "UQCdA1_m4iiU6jKUaBMsvIoWfMLUzaRfggNg0sabGK-eV-SV"; // Tu dirección de cobro
+    // --- TON Connect SDK Instancia ---
+    let tonConnectUI = null;
 
-    // **IMPORTANTE**: Reemplaza esta URL con la URL real donde alojaste tu manifiesto
-    const MY_APP_MANIFEST_URL = 'https://github.com/Nicolashcro/casino666/blob/2ca8d6d283f4196b40ecb06657f909e807fae01f/tonconnect-manifest.json';
+    // **IMPORTANTE**: URL a tu archivo tonconnect-manifest.json alojado en HTTPS
+    // USA LA URL RAW DE GITHUB SI LO TIENES ALLÍ:
+    const MY_APP_MANIFEST_URL = 'https://raw.githubusercontent.com/Nicolashcro/casino666/main/tonconnect-manifest.json';
 
     // --- INICIALIZACIÓN DEL JUEGO Y TON CONNECT ---
-    function initGame() {
+    async function initGame() {
         updateDisplays();
-        initializeTonConnect(); // Inicializar TON Connect
-        setInterval(rechargeEnergy, energyRechargeInterval);
-        console.log("Crypto Pets - Tap & Evolve: Inicializado!");
+        setInterval(rechargeEnergy, 1000);
+        initTonConnect(); // Inicializar TON Connect
+
+        // Lógica de Telegram Web App (si aplica)
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            console.log("Telegram WebApp SDK detectado.");
+            // window.Telegram.WebApp.expand(); 
+        } else {
+            console.log("Telegram WebApp SDK no detectado.");
+        }
     }
 
-    function initializeTonConnect() {
+    function initTonConnect() {
         if (typeof TonConnectSDK === 'undefined' || typeof TonConnectUI === 'undefined') {
-            console.error("TON Connect SDK o UI no está cargado. Asegúrate de incluir los scripts en tu HTML.");
+            console.error("TON Connect SDK o UI no está cargado.");
             showMessage("Error: Falta SDK de TON", "error");
-            if(connectWalletBtn) connectWalletBtn.disabled = true;
+            if (connectWalletBtn) connectWalletBtn.disabled = true;
             return;
         }
 
-        if (MY_APP_MANIFEST_URL === 'URL_REAL_DE_TU_TONCONNECT-MANIFEST.JSON') {
-            console.error("FATAL: Debes configurar la 'MY_APP_MANIFEST_URL' en script.js con la URL real de tu archivo tonconnect-manifest.json alojado en HTTPS.");
-            showMessage("Error de Configuración: Falta URL del Manifiesto TON", "error");
-            if(connectWalletBtn) connectWalletBtn.disabled = true;
+        if (!MY_APP_MANIFEST_URL || MY_APP_MANIFEST_URL === 'URL_REAL_DE_TU_TONCONNECT-MANIFEST.JSON') {
+            console.error("Configura la MY_APP_MANIFEST_URL en script.js con la URL real de tu tonconnect-manifest.json");
+            showMessage("Error Config: Falta URL del Manifiesto TON", "error");
+            if (connectWalletBtn) connectWalletBtn.disabled = true;
             return;
         }
-        
-        // Inicializar TonConnectUI
-        tonConnectUI = new TonConnectUI.TonConnectUI({
-            manifestUrl: MY_APP_MANIFEST_URL,
-            buttonRootId: null, // Usaremos nuestro propio botón
-            // language: 'es', // Opcional
-            // actionsConfiguration: { twaReturnUrl: 'https://t.me/your_bot_or_channel' } // Opcional para Telegram Web Apps
-        });
 
-        // Suscribirse a cambios de estado de la billetera
-        const unsubscribe = tonConnectUI.onStatusChange(
-            walletAndAccount => { // walletAndAccount puede ser null si se desconecta
-                if (walletAndAccount) {
-                    handleWalletConnected(walletAndAccount);
-                } else {
-                    handleWalletDisconnected();
+        try {
+            tonConnectUI = new TonConnectUI.TonConnectUI({
+                manifestUrl: MY_APP_MANIFEST_URL,
+                actionsConfiguration: {
+                    // Para que funcione bien dentro de Telegram Web Apps al usar billeteras externas
+                    twaReturnUrl: `https://t.me/${window.Telegram?.WebApp?.initDataUnsafe?.bot?.username || 'your_bot_username'}`
                 }
-            }
-        );
+                // buttonRootId: 'ton-connect-button-custom-root' // Opcional: si quieres que el SDK renderice su propio botón
+            });
 
-        // También puedes verificar si hay una conexión restaurada
-        checkRestoredConnection();
-    }
-    
-    async function checkRestoredConnection() {
-        if (!tonConnectUI) return;
-        // Pequeño retraso para dar tiempo al SDK a restaurar la conexión si es posible
-        await new Promise(resolve => setTimeout(resolve, 500)); 
-        if (tonConnectUI.connected) {
-            console.log("Conexión de billetera restaurada por el SDK.");
-            // El evento onStatusChange ya debería haberse disparado si hay una conexión.
-            // Si no, puedes obtener la billetera manualmente:
-            // const wallet = tonConnectUI.wallet;
-            // if (wallet) handleWalletConnected(wallet);
-        } else {
-            console.log("No hay conexión de billetera restaurada.");
-            updateSimulatedWalletUI(false); // Asegurar que la UI esté desconectada
+            // Suscribirse a cambios de estado
+            tonConnectUI.onStatusChange(wallet => { // wallet puede ser null o un objeto WalletInfoNotConnected | WalletInfoRemote | WalletInfoInjected
+                if (wallet) { // Conectado
+                    // wallet.account = { address, chain, publicKey, walletStateInit }
+                    // wallet.device = { platform, appName, appVersion, maxProtocolVersion, features }
+                    const address = TonConnectSDK.toUserFriendlyAddress(wallet.account.address, wallet.account.chain === TonConnectSDK.CHAIN.TESTNET);
+                    const network = wallet.account.chain === TonConnectSDK.CHAIN.TESTNET ? "Testnet" : "Mainnet";
+                    
+                    console.log(`Billetera conectada: ${address} en ${network}`);
+                    console.log("Info de billetera completa:", wallet);
+
+                    walletAddressDisplay.textContent = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+                    walletNetworkDisplay.textContent = `(${network})`;
+                    walletInfoDisplay.style.display = 'block';
+                    connectWalletBtn.textContent = 'Desconectar';
+                    if(buyTokensWithTonBtn) buyTokensWithTonBtn.disabled = false;
+
+                    // Guardar estado (opcional, el SDK puede manejar la restauración)
+                    localStorage.setItem('ton_wallet_connected', 'true');
+
+                } else { // Desconectado
+                    console.log('Billetera desconectada.');
+                    walletInfoDisplay.style.display = 'none';
+                    walletAddressDisplay.textContent = '';
+                    walletNetworkDisplay.textContent = '';
+                    connectWalletBtn.textContent = 'Conectar Billetera';
+                    if(buyTokensWithTonBtn) buyTokensWithTonBtn.disabled = true;
+                    localStorage.removeItem('ton_wallet_connected');
+                }
+            });
+
+            // Intentar restaurar una conexión existente
+            // Esto es importante para que el usuario no tenga que reconectar cada vez
+            tonConnectUI.connectionRestored.then(restored => {
+                 if (restored) {
+                    console.log("Conexión de billetera restaurada exitosamente por el SDK.");
+                 } else {
+                    console.log("No se restauró ninguna conexión previa por el SDK.");
+                 }
+            });
+
+        } catch (e) {
+            console.error("Error inicializando TonConnectUI:", e);
+            showMessage("Error al iniciar conexión TON", "error");
+            if (connectWalletBtn) connectWalletBtn.disabled = true;
         }
     }
 
-
-    function handleWalletConnected(walletInfo) {
-        // 'walletInfo' es el objeto que recibes del SDK cuando la conexión es exitosa.
-        // Basado en tu documentación de TON Connect (ConnectEventSuccess):
-        // walletInfo.account.address es la dirección raw (0:<hex>)
-        // walletInfo.account.chain es MAINNET o TESTNET
-        // walletInfo.account.publicKey
-        // walletInfo.account.walletStateInit
-        // walletInfo.device (appName, appVersion, etc.)
-        
-        const addressRaw = walletInfo.account.address;
-        const isTestnet = walletInfo.account.chain === TonConnectSDK.CHAIN.TESTNET; // Asumiendo que el SDK tiene esta constante
-                                                                                // O compara con "-3" para Testnet, "-239" para Mainnet como en tu doc
-        
-        // Convertir dirección raw a formato "user-friendly" (el SDK debería proveer esto)
-        // Para el ejemplo, usaré una función hipotética o la mostraré raw.
-        // @tonconnect/sdk sí tiene `TonConnectSDK.toUserFriendlyAddress(rawAddress, isTestnet)`
-        const userFriendlyAddress = TonConnectSDK.toUserFriendlyAddress(addressRaw, isTestnet);
-
-        simulatedTonAddress = userFriendlyAddress; // Guardar la dirección real
-        simulatedTonNetwork = isTestnet ? "Testnet" : "Mainnet";
-
-        isWalletConnected_simulated = true; // Actualizar nuestro estado interno
-        localStorage.setItem('ton_wallet_connected_real', 'true');
-        localStorage.setItem('ton_wallet_address_real', userFriendlyAddress);
-        localStorage.setItem('ton_wallet_network_real', simulatedTonNetwork);
-        
-        console.log(`Billetera TON Conectada: ${userFriendlyAddress} (${simulatedTonNetwork})`);
-        console.log("Información del dispositivo de la billetera:", walletInfo.device);
-        
-        // Aquí podrías verificar las "features" soportadas por la billetera:
-        if (walletInfo.device.features.some(f => f.name === 'SendTransaction')) {
-            console.log("La billetera conectada soporta 'SendTransaction'.");
-        }
-
-        // Si solicitaste 'ton_proof' y fue exitoso, aquí verificarías la prueba.
-        // const tonProofReply = walletInfo.connectItems?.find(item => item.name === 'ton_proof');
-        // if (tonProofReply && !tonProofReply.error) { /* ... verificar prueba ... */ }
-
-        updateSimulatedWalletUI(true, userFriendlyAddress, simulatedTonNetwork);
-        showMessage("¡Billetera TON conectada!", "success");
-    }
-
-    function handleWalletDisconnected() {
-        isWalletConnected_simulated = false;
-        simulatedTonAddress = "";
-        simulatedTonNetwork = "";
-        localStorage.removeItem('ton_wallet_connected_real');
-        localStorage.removeItem('ton_wallet_address_real');
-        localStorage.removeItem('ton_wallet_network_real');
-        console.log("Billetera TON Desconectada.");
-        updateSimulatedWalletUI(false);
-        showMessage("Billetera TON desconectada.", "info");
-    }
-    
-    function updateSimulatedWalletUI(isConnected, address = "", network = "") {
-        isWalletConnected_simulated = isConnected; // Actualiza el estado global
-        if (isConnected) {
-            walletInfoDisplay.style.display = 'flex'; // Mostrar información
-            walletAddressDisplay.textContent = address.substring(0, 6) + "..." + address.substring(address.length - 4);
-            walletAddressDisplay.setAttribute('data-tooltip', `Billetera: ${address}`);
-            walletNetworkDisplay.textContent = `(${network})`;
-            connectWalletBtn.textContent = "Desconectar";
-        } else {
-            walletInfoDisplay.style.display = 'none';
-            walletAddressDisplay.textContent = "";
-            walletNetworkDisplay.textContent = "";
-            connectWalletBtn.textContent = "Conectar Billetera TON";
-        }
-    }
-    
+    // --- MANEJO DE BOTÓN DE CONEXIÓN/DESCONEXIÓN ---
     if (connectWalletBtn) {
         connectWalletBtn.addEventListener('click', async () => {
             if (!tonConnectUI) {
-                showMessage("SDK de TON no inicializado.", "error");
+                showMessage("Error: TON Connect no está listo.", "error");
                 return;
             }
             if (tonConnectUI.connected) {
                 try {
-                    await tonConnectUI.disconnect(); // SDK maneja la desconexión
-                    // El evento onStatusChange se encargará de actualizar la UI
+                    await tonConnectUI.disconnect();
+                    showMessage("Billetera desconectada.", "info");
                 } catch (e) {
                     console.error("Error al desconectar:", e);
                     showMessage("Error al desconectar.", "error");
                 }
             } else {
-                // El SDK @tonconnect/ui abre su propio modal para seleccionar billetera
-                // Puede que necesites configurar `tonConnectUI.uiOptions = { language: 'es', theme: 'SYSTEM' };` antes.
-                // El método para mostrar el modal puede variar, consulta la doc de @tonconnect/ui.
-                // Usualmente, el botón que genera el SDK (si usas buttonRootId) o una llamada directa abre el modal.
-                // Para un botón personalizado, a menudo se usa:
-                try {
-                    const walletsList = await tonConnectUI.getWallets(); // Opcional, para ver las billeteras
-                    console.log("Billeteras disponibles:", walletsList);
-                    tonConnectUI.openModal(); // Abre el modal de selección de billetera del SDK
-                } catch (e) {
-                    console.error("Error al abrir modal de conexión:", e);
-                    showMessage("Error al iniciar conexión.", "error");
-                }
+                // Abrir el modal del SDK para que el usuario elija una billetera
+                tonConnectUI.openModal();
             }
         });
     }
 
-    // --- LÓGICA DE PAGO CON TON (ILUSTRATIVA) ---
-    if (evolveButton) { // Reutilicemos el botón de evolucionar para simular una acción que requiere pago
-        evolveButton.addEventListener('click', async () => {
-            if (!isWalletConnected_simulated || !tonConnectUI || !tonConnectUI.connected) {
-                showMessage("Conecta tu billetera TON para evolucionar con tokens reales.", "error");
-                // Opcional: intentar abrir el modal de conexión
-                // if (tonConnectUI && !tonConnectUI.connected) tonConnectUI.openModal();
+    // --- MANEJO DE COMPRA DE TOKENS (TRANSACCIÓN SIMULADA CON SDK) ---
+    if (buyTokensWithTonBtn) {
+        buyTokensWithTonBtn.addEventListener('click', async () => {
+            if (!tonConnectUI || !tonConnectUI.connected) {
+                showMessage("Por favor, conecta tu billetera TON primero.", "error");
+                // Opcional: intentar abrir modal de conexión
+                // tonConnectUI?.openModal();
                 return;
             }
 
-            if (petTokens < currentEvolutionCost) {
-                 showMessage("¡No tienes suficientes PetTokens (del juego) para esta evolución!", "error");
-                 return;
-            }
-
-            // SIMULAREMOS QUE LA EVOLUCIÓN CUESTA UNA PEQUEÑA CANTIDAD DE TON REAL
-            const tonCostForEvolution = 0.01; // ¡Usa valores muy pequeños para pruebas en Testnet!
-            const amountNanoTON = TonConnectSDK.toNano(tonCostForEvolution.toString()).toString();
+            const amountToPayTON = "0.1"; // Cantidad en TON para la compra (¡USA TESTNET!)
+            const amountInNanoTON = TonConnectSDK.toNano(amountToPayTON).toString(); // Convertir a nanoTON
 
             const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 360, // Transacción válida por 6 minutos
+                validUntil: Math.floor(Date.now() / 1000) + 360, // 6 minutos de validez
                 messages: [
                     {
-                        address: GAME_PAYMENT_ADDRESS_TON, // Tu dirección de cobro
-                        amount: amountNanoTON,
-                        // payload: "base64_encoded_comment_or_data" // Opcional
+                        address: GAME_RECEIVING_TON_ADDRESS, // Tu dirección de cobro
+                        amount: amountInNanoTON,
+                        // payload: "YOUR_COMMENT_OR_DATA_ENCODED_IN_BASE64", // Opcional
                     }
                 ]
+                // network: TonConnectSDK.CHAIN.TESTNET, // Opcional: puedes especificar la red
             };
 
-            showMessage(`Enviando ${tonCostForEvolution} TON para la evolución...`, "info");
-
             try {
-                // Este es el paso crucial donde el SDK pide al usuario confirmar en su billetera
+                showMessage(`Enviando ${amountToPayTON} TON... Confirma en tu billetera.`, "info");
                 const result = await tonConnectUI.sendTransaction(transaction);
-                
-                // 'result' contendrá el boc de la transacción enviada.
-                // NO significa que la transacción esté confirmada en la blockchain.
-                console.log("Transacción enviada al wallet, resultado (boc):", result.boc);
-                showMessage("Transacción enviada a la billetera. Esperando confirmación...", "info");
 
-                // **IMPORTANTE: PASO FALTANTE CRÍTICO PARA PRODUCCIÓN**
-                // Aquí es donde DEBERÍAS tener un backend que:
-                // 1. Reciba este 'boc' o la información de la transacción.
-                // 2. Lo envíe a la red TON (si el SDK no lo hizo por completo).
-                // 3. Monitoree la blockchain para confirmar que la transacción fue exitosa.
-                // 4. SOLO DESPUÉS de la confirmación en blockchain, tu backend debería
-                //    notificar al juego (o actualizar la base de datos del jugador)
-                //    para que se acredite la evolución.
+                // 'result.boc' es el Bag of Cells de la transacción firmada.
+                // Esto NO significa que la transacción esté confirmada en la blockchain.
+                console.log("Transacción enviada (BOC):", result.boc);
+                showMessage("Transacción enviada a la billetera. Procesando...", "info");
 
-                // Para esta DEMO, simularemos una confirmación exitosa después de un tiempo:
+                // **Paso CRÍTICO FALTANTE PARA PRODUCCIÓN:**
+                // Necesitas un backend para enviar este `result.boc` a la red TON (si el SDK no lo hace)
+                // y para verificar que la transacción se confirme en la blockchain.
+                // NO ACREDITES TOKENS EN EL JUEGO ANTES DE ESTA VERIFICACIÓN DE BACKEND.
+
+                // Para esta demo, simulamos éxito y acreditamos tokens del juego:
                 setTimeout(() => {
-                    petTokens -= currentEvolutionCost; // Cobrar tokens del juego
-                    evolutionLevel++;
-                    currentEvolutionCost *= 1.20;
-                    showMessage(`¡Mascota evolucionada al Nivel ${evolutionLevel} con TON! (Confirmación Simulada)`, "success");
+                    petTokens += 1000; // Acreditar PetTokens comprados
                     updateDisplays();
-                }, 8000); // Simular 8 segundos de espera para "confirmación"
+                    showMessage("¡1000 PetTokens comprados con TON! (Confirmación Simulada)", "success");
+                }, 8000); // Simular tiempo de "confirmación"
 
             } catch (error) {
                 console.error("Error en sendTransaction:", error);
-                let userMessage = "Error al procesar el pago con TON.";
-                if (error.message && error.message.toLowerCase().includes('user declined') || (error.code && error.code === 300 /* User declined the transaction*/)) {
-                    userMessage = "Pago cancelado por el usuario.";
-                } else if (error.message) {
-                     // userMessage += " Detalles: " + error.message;
+                // La documentación de TON Connect tiene códigos de error específicos.
+                // Ejemplo de manejo de error si el usuario rechaza:
+                // if (error.code === TonConnectSDK.UserRejectsError.code) { ... }
+                // O, más genéricamente, a menudo el mensaje contiene "User declined" o similar.
+                if (error && (typeof error.message === 'string' && error.message.toLowerCase().includes('user rejected') || error.code === 300)) {
+                     showMessage("Compra cancelada por el usuario.", "error");
+                } else {
+                     showMessage("Error al procesar el pago con TON.", "error");
                 }
-                showMessage(userMessage, "error");
             }
         });
     }
 
-
-    // --- FUNCIONES DE ACTUALIZACIÓN DE UI ---
+    // --- FUNCIONES DE ACTUALIZACIÓN DE UI Y JUEGO (como estaban) ---
     function updateDisplays() {
-        if(petTokensBalanceDisplay) petTokensBalanceDisplay.textContent = Math.floor(petTokens);
-        if(petEvolutionLevelDisplay) petEvolutionLevelDisplay.textContent = evolutionLevel;
-        if(evolutionCostDisplay) evolutionCostDisplay.textContent = currentEvolutionCost.toFixed(2); // Mostrar decimales para el costo
-        if(energyValueDisplay) energyValueDisplay.textContent = Math.floor(currentEnergy);
-        if(energyMaxDisplay) energyMaxDisplay.textContent = maxEnergy;
-        if(energyFill) energyFill.style.width = `${(currentEnergy / maxEnergy) * 100}%`;
-
-        const petPlaceholders = ['🐾', '🐶', '🐱', '🦊', '🐻', '🐼', '🦁', '🦄', '🐲', '🌟']; // Más iconos
-        const petElem = document.getElementById('pet-placeholder');
-        if(petElem) petElem.textContent = petPlaceholders[evolutionLevel % petPlaceholders.length];
+        // ... (código de updateDisplays como en la respuesta anterior, asegurando que todos los elementos existan)
+        if (petTokensBalanceDisplay) petTokensBalanceDisplay.textContent = Math.floor(petTokens);
+        if (petEvolutionLevelDisplay) petEvolutionLevelDisplay.textContent = evolutionLevel;
+        if (evolutionCostDisplay) evolutionCostDisplay.textContent = currentEvolutionCost.toFixed(2);
+        if (energyValueDisplay) energyValueDisplay.textContent = Math.floor(currentEnergy);
+        if (energyMaxDisplay) energyMaxDisplay.textContent = maxEnergy;
+        if (energyFill) energyFill.style.width = `${(currentEnergy / maxEnergy) * 100}%`;
+        
+        const petEmojis = ['🐾', '🐶', '🐱', '🦊', '🐻', '🐼', '🦁', '🦄', '🐲', '🌟'];
+        if (petPlaceholder) petPlaceholder.textContent = petEmojis[evolutionLevel % petEmojis.length];
         
         if (evolveButton) {
-            evolveButton.disabled = petTokens < currentEvolutionCost || !isWalletConnected_simulated; 
-            // Deshabilitar si no hay suficientes tokens o billetera no conectada para la "compra" de evolución
-            if (!isWalletConnected_simulated) {
-                evolveButton.setAttribute('data-tooltip', 'Conecta tu billetera TON para evolucionar con TON');
-            } else if (petTokens < currentEvolutionCost) {
-                evolveButton.setAttribute('data-tooltip', 'Necesitas más PetTokens del juego');
-            } else {
-                evolveButton.removeAttribute('data-tooltip');
-            }
+            evolveButton.disabled = petTokens < currentEvolutionCost;
+        }
+        if (buyTokensWithTonBtn && tonConnectUI) { // Habilitar/deshabilitar botón de compra
+            buyTokensWithTonBtn.disabled = !tonConnectUI.connected;
         }
     }
 
-    function showMessage(text, type = "info") {
+    function showMessage(text, type = "info") { /* ... como antes ... */
         if (!messagesDisplay) return;
         messagesDisplay.textContent = text;
-        messagesDisplay.className = `message-${type}`; // Para estilos CSS: .message-info, .message-error, .message-success
-        setTimeout(() => {
-            if(messagesDisplay) messagesDisplay.textContent = "";
-            if(messagesDisplay) messagesDisplay.className = "";
-        }, 4000);
+        messagesDisplay.className = `message-${type}`;
+        messagesDisplay.style.color = type === "error" ? '#dc3545' : type === "success" ? '#28a745' : '#007bff';
+        setTimeout(() => { if(messagesDisplay) messagesDisplay.textContent = ""; if(messagesDisplay) messagesDisplay.className = ""; }, 4000);
     }
 
-    function showTapFeedback(value) { /* ... como antes ... */
+    function showTapFeedback(event) { /* ... como antes ... */
         const feedback = document.createElement('div');
-        feedback.classList.add('tap-value-feedback');
-        feedback.textContent = `+${value}`;
-        if(petImageContainer) petImageContainer.appendChild(feedback);
-        setTimeout(() => { feedback.remove(); }, 750);
+        feedback.textContent = `+${tapValue}`;
+        feedback.classList.add('tap-feedback');
+        const gameAreaRect = document.getElementById('game-area').getBoundingClientRect();
+        feedback.style.left = `${event.clientX - gameAreaRect.left - 10}px`;
+        feedback.style.top = `${event.clientY - gameAreaRect.top - 20}px`;
+        document.getElementById('game-area').appendChild(feedback);
+        setTimeout(() => feedback.remove(), 950);
     }
 
-
-    // --- LÓGICA DE "TAP TO EARN" ---
+    // --- LÓGICA DEL JUEGO "TAP TO EARN" Y EVOLUCIÓN (como estaban) ---
     if (petImageContainer) { /* ... como antes ... */
-        petImageContainer.addEventListener('click', () => {
+        petImageContainer.addEventListener('click', (event) => {
             if (currentEnergy >= energyCostPerTap) {
                 currentEnergy -= energyCostPerTap;
                 petTokens += tapValue;
-                showTapFeedback(tapValue);
+                showTapFeedback(event);
                 updateDisplays();
             } else {
                 showMessage("¡Sin energía!", "error");
             }
         });
     }
-
     function rechargeEnergy() { /* ... como antes ... */
         if (currentEnergy < maxEnergy) {
             currentEnergy = Math.min(maxEnergy, currentEnergy + energyRechargeRate);
             updateDisplays();
         }
     }
-    
-    // --- INICIALIZAR TODO ---
+    if (evolveButton) { /* Se modificó para simular costo en TON también */
+         evolveButton.addEventListener('click', () => {
+            if (petTokens >= currentEvolutionCost) {
+                // Esta es la evolución con PetTokens del juego.
+                // El botón de "Comprar con TON" es para adquirir PetTokens, no para evolucionar directamente con TON.
+                // O podrías tener una evolución que SÓLO cueste TON.
+                petTokens -= currentEvolutionCost;
+                evolutionLevel++;
+                currentEvolutionCost = Math.floor(evolutionBaseCost * Math.pow(1.2, evolutionLevel));
+                updateDisplays();
+                showMessage(`¡Mascota evolucionada al Nivel ${evolutionLevel}!`, "success");
+            } else {
+                showMessage("No tienes suficientes PetTokens para evolucionar.", "error");
+            }
+        });
+    }
+
+    // --- INICIALIZAR EL JUEGO ---
     initGame();
 });
